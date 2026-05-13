@@ -57,6 +57,7 @@
     var fileInput = document.getElementById('file-input');
     var btnOpen = document.getElementById('btn-open');
     var btnSave = document.getElementById('btn-save');
+    var inputWidth = document.getElementById('input-pagewidth');
 
     if (btnOpen && fileInput) {
       btnOpen.addEventListener('click', function () { fileInput.click(); });
@@ -70,6 +71,23 @@
 
     if (btnSave) {
       btnSave.addEventListener('click', downloadFile);
+    }
+
+    if (inputWidth) {
+      var saved = localStorage.getItem('md-pagewidth');
+      if (saved) inputWidth.value = saved;
+
+      function apply() {
+        var val = inputWidth.value.trim();
+        if (window.__applyPageWidth) {
+          window.__applyPageWidth(val);
+        }
+      }
+
+      inputWidth.addEventListener('change', apply);
+      inputWidth.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { apply(); inputWidth.blur(); }
+      });
     }
 
     console.log('[md-editor] File I/O ready');

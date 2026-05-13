@@ -15,46 +15,24 @@
 
   log('init', 'Script loaded, DEBUG=' + DEBUG);
 
-  var pageWidths = [0, 1200, 900, 700];
-  var pageWidthIndex = 0;
-  var pageWidthLabels = ['铺满', '1200', '900', '700'];
-
-  log('config', 'Page width presets', { pageWidths: pageWidths, index: pageWidthIndex });
-
-  function applyPageWidth(targetWidth) {
+  function applyPageWidth(value) {
     var el = document.getElementById('vditor');
-    if (!el) {
-      log('error', 'applyPageWidth: #vditor not found');
-      return;
-    }
-    if (!targetWidth) {
+    if (!el) return;
+    var num = parseInt(value, 10);
+    if (!num || num <= 0) {
       el.style.paddingLeft = '';
       el.style.paddingRight = '';
-      log('width', 'Reset to full width', { windowWidth: window.innerWidth });
+      log('width', 'Reset to full width');
     } else {
-      var padding = Math.max(0, (window.innerWidth - targetWidth) / 2);
+      var padding = Math.max(0, (window.innerWidth - num) / 2);
       el.style.paddingLeft = padding + 'px';
       el.style.paddingRight = padding + 'px';
-      log('width', 'Applied width',
-        { target: targetWidth, window: window.innerWidth, padding: Math.round(padding) });
+      log('width', 'Applied',
+        { maxWidth: num, window: window.innerWidth, padding: Math.round(padding) });
     }
   }
 
-  function cyclePageWidth() {
-    pageWidthIndex = (pageWidthIndex + 1) % pageWidths.length;
-    var w = pageWidths[pageWidthIndex];
-    var label = pageWidthLabels[pageWidthIndex];
-    log('width', 'Cycled to ' + label,
-      { index: pageWidthIndex, targetWidth: w, windowWidth: window.innerWidth });
-    applyPageWidth(w);
-
-    var btn = document.querySelector('[data-type="pagewidth"]');
-    if (btn) {
-      btn.title = '页面宽度: ' + label;
-    } else {
-      log('warn', 'cyclePageWidth: toolbar button not found');
-    }
-  }
+  var pageWidth = localStorage.getItem('md-pagewidth') || '';
 
   log('init', 'Creating Vditor instance...');
 
@@ -102,14 +80,7 @@
       'upload', 'table', '|',
       'undo', 'redo', '|',
       'edit-mode', 'content-theme', 'code-theme', 'export', '|',
-      'outline', 'fullscreen',
-      {
-        name: 'pagewidth',
-        tip: '页面宽度',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h2v14H4V5zm5 0h2v14H9V5zm5 0h2v14h-2V5zm4 0h2v14h-2V5z"/></svg>',
-        click: function () { cyclePageWidth(); }
-      },
-      'help'
+      'outline', 'fullscreen', 'help'
     ],
     toolbarConfig: { hide: false, pin: true },
     upload: {
@@ -156,10 +127,17 @@
 
   window.addEventListener('resize', function () {
     vditor.resize({ height: window.innerHeight });
-    applyPageWidth(pageWidths[pageWidthIndex]);
+    applyPageWidth(pageWidth);
   });
 
   log('init', 'Event listeners registered');
 
   window.__vditor = vditor;
+  window.__applyPageWidth = function (value) {
+    pageWidth = value;
+    localStorage.setItem('md-pagewidth', value);
+    applyPageWidth(value);
+  };
+
+  if (pageWidth) applyPageWidth(pageWidth);
 })();

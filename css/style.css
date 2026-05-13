@@ -51,3 +51,34 @@ body {
   width: 16px;
   height: 16px;
 }
+
+.file-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(128, 128, 128, 0.2);
+  margin: 0 4px;
+}
+
+.file-toolbar input {
+  width: 80px;
+  height: 28px;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.08);
+  color: #666;
+  font-size: 12px;
+  padding: 0 6px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.file-toolbar input:focus {
+  border-color: rgba(47, 123, 191, 0.4);
+  background: rgba(128, 128, 128, 0.12);
+  color: #333;
+}
+
+.file-toolbar input::-webkit-inner-spin-button,
+.file-toolbar input::-webkit-outer-spin-button {
+  opacity: 0.6;
+}
