@@ -32,14 +32,14 @@ JS_REQUIRED_PATTERNS = {
     "cache enabled": r"cache:\s*\{\s*enable:\s*true",
     "counter enabled": r"counter:\s*\{\s*enable:\s*true",
     "outline enabled": r"outline:\s*\{\s*enable:\s*true",
-    "pageWidths declared": r"var\s+pageWidths\s*=",
     "applyPageWidth fn": r"function\s+applyPageWidth\b",
-    "cyclePageWidth fn": r"function\s+cyclePageWidth\b",
-    "pagewidth toolbar btn": r"name:\s*'pagewidth'",
+    "__applyPageWidth exposed": r"window\.__applyPageWidth\s*=",
+    "__vditor exposed": r"window\.__vditor\s*=",
     "resize handler": r"addEventListener\('resize'",
     "debug logging": r"function\s+log\b",
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
+    "md-pagewidth localStorage": r"md-pagewidth",
 }
 
 CSS_REQUIRED_PATTERNS = {
@@ -104,6 +104,12 @@ def validate():
             print(f"  {red(chr(0x2717))} #vditor container MISSING")
         else:
             print(f"  {green(chr(0x2713))} #vditor container found")
+
+        if 'input-pagewidth' not in html:
+            print(f"  {yellow('!')} #input-pagewidth MISSING")
+            warnings.append("HTML: input-pagewidth")
+        else:
+            print(f"  {green(chr(0x2713))} #input-pagewidth found")
     else:
         errors.append("index.html not found")
 
@@ -120,6 +126,28 @@ def validate():
                 errors.append(f"JS: {label}")
     else:
         errors.append("js/editor.js not found")
+
+    # ---- 3b. file-io.js validation ----
+    print(f"\n{'[3b] file-io.js structure':<30}")
+    fio_path = ROOT / "js/file-io.js"
+    if fio_path.exists():
+        fio = fio_path.read_text(encoding="utf-8")
+        fio_patterns = {
+            "getVditor helper": r"function\s+getVditor\b",
+            "loadFile fn": r"function\s+loadFile\b",
+            "downloadFile fn": r"function\s+downloadFile\b",
+            "confirm before load": r"confirm\(",
+            "input-pagewidth binding": r"input-pagewidth",
+            "__applyPageWidth bridge": r"window\.__applyPageWidth",
+        }
+        for label, pattern in fio_patterns.items():
+            if re.search(pattern, fio):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"file-io.js: {label}")
+    else:
+        errors.append("js/file-io.js not found")
 
     # ---- 4. CSS code validation ----
     print(f"\n{'[4] CSS structure':<30}")
@@ -142,9 +170,10 @@ def validate():
 
         checks = {
             "Container selector 'vditor'": r"new Vditor\('vditor'",
-            "Page width toolbar button": r"name:\s*'pagewidth'",
-            "Click handler wired": r"click:\s*function\s*\(\s*\)\s*\{\s*cyclePageWidth",
-            "Resize recalculates width": r"applyPageWidth\(pageWidths\[pageWidthIndex\]\)",
+            "__applyPageWidth bridge": r"window\.__applyPageWidth",
+            "__vditor bridge": r"window\.__vditor",
+            "Resize reapplies width": r"applyPageWidth\(pageWidth\)",
+            "pageWidth from localStorage": r"localStorage\.getItem\('md-pagewidth'",
         }
         for label, pattern in checks.items():
             if re.search(pattern, js):
