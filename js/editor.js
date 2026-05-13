@@ -160,4 +160,6 @@
   });
 
   log('init', 'Event listeners registered');
+
+  window.__vditor = vditor;
 })();

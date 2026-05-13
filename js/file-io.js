@@ -1,16 +1,9 @@
 (function () {
   'use strict';
 
-  function getVditor(callback, retries) {
-    retries = retries || 0;
-    var vd = window.Vditor && window.Vditor.vditors && window.Vditor.vditors['vditor'];
-    if (vd) {
-      callback(vd);
-    } else if (retries < 50) {
-      setTimeout(function () { getVditor(callback, retries + 1); }, 100);
-    } else {
-      console.error('[md-editor] Vditor instance not found after 5s');
-    }
+  function getVditor() {
+    if (window.__vditor) return window.__vditor;
+    throw new Error('Vditor instance not ready — editor.js must load before file-io.js');
   }
 
   function deriveFilename(vd) {
@@ -22,10 +15,17 @@
   function loadFile(file) {
     var reader = new FileReader();
     reader.onload = function (e) {
-      getVditor(function (vd) {
+      try {
+        var vd = getVditor();
+        var hasContent = vd.getValue().trim().length > 0;
+        if (hasContent && !confirm('当前编辑区有内容，打开新文件将替换全部内容，是否继续？')) {
+          return;
+        }
         vd.setValue(e.target.result);
         console.log('[md-editor] Loaded: ' + file.name);
-      });
+      } catch (err) {
+        console.error('[md-editor] ' + err.message);
+      }
     };
     reader.onerror = function () {
       console.error('[md-editor] Failed to read: ' + file.name);
@@ -34,7 +34,8 @@
   }
 
   function downloadFile() {
-    getVditor(function (vd) {
+    try {
+      var vd = getVditor();
       var content = vd.getValue();
       var filename = deriveFilename(vd);
       var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
@@ -47,7 +48,9 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       console.log('[md-editor] Downloaded: ' + filename);
-    });
+    } catch (err) {
+      console.error('[md-editor] ' + err.message);
+    }
   }
 
   function init() {
