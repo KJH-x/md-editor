@@ -5,7 +5,6 @@ body {
 
 #vditor {
   height: 100vh;
-  transition: padding 0.3s ease;
 }
 
 .editor-brand {
@@ -17,68 +16,4 @@ body {
   color: #aaa;
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-}
-
-.file-toolbar {
-  position: fixed;
-  bottom: 10px;
-  left: 16px;
-  z-index: 1000;
-  display: flex;
-  gap: 4px;
-}
-
-.file-toolbar button {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(128, 128, 128, 0.1);
-  color: #666;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, color 0.2s;
-}
-
-.file-toolbar button:hover {
-  background: rgba(128, 128, 128, 0.25);
-  color: #333;
-}
-
-.file-toolbar button svg {
-  width: 16px;
-  height: 16px;
-}
-
-.file-toolbar__sep {
-  width: 1px;
-  height: 20px;
-  background: rgba(128, 128, 128, 0.2);
-  margin: 0 4px;
-}
-
-.file-toolbar input {
-  width: 80px;
-  height: 28px;
-  border: 1px solid rgba(128, 128, 128, 0.2);
-  border-radius: 4px;
-  background: rgba(128, 128, 128, 0.08);
-  color: #666;
-  font-size: 12px;
-  padding: 0 6px;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.file-toolbar input:focus {
-  border-color: rgba(47, 123, 191, 0.4);
-  background: rgba(128, 128, 128, 0.12);
-  color: #333;
-}
-
-.file-toolbar input::-webkit-inner-spin-button,
-.file-toolbar input::-webkit-outer-spin-button {
-  opacity: 0.6;
 }

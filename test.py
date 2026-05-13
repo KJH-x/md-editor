@@ -33,9 +33,12 @@ JS_REQUIRED_PATTERNS = {
     "counter enabled": r"counter:\s*\{\s*enable:\s*true",
     "outline enabled": r"outline:\s*\{\s*enable:\s*true",
     "applyPageWidth fn": r"function\s+applyPageWidth\b",
-    "__applyPageWidth exposed": r"window\.__applyPageWidth\s*=",
-    "__vditor exposed": r"window\.__vditor\s*=",
+    "toolbar open button": r"name:\s*'open'",
+    "toolbar save button": r"name:\s*'save'",
+    "toolbar pagewidth button": r"name:\s*'pagewidth'",
     "resize handler": r"addEventListener\('resize'",
+    "MutationObserver": r"MutationObserver",
+    "contentAreas fn": r"function\s+contentAreas\b",
     "debug logging": r"function\s+log\b",
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
@@ -44,8 +47,7 @@ JS_REQUIRED_PATTERNS = {
 
 CSS_REQUIRED_PATTERNS = {
     "body style": r"body\s*\{",
-    "vditor height": r"#vditor\s*\{",
-    "padding transition": r"transition:\s*padding",
+    "#vditor height": r"#vditor\s*\{",
     "editor-brand": r"\.editor-brand\s*\{",
 }
 
@@ -105,11 +107,11 @@ def validate():
         else:
             print(f"  {green(chr(0x2713))} #vditor container found")
 
-        if 'input-pagewidth' not in html:
-            print(f"  {yellow('!')} #input-pagewidth MISSING")
-            warnings.append("HTML: input-pagewidth")
+        if 'file-io.js' in html:
+            print(f"  {yellow('!')} stale reference to file-io.js")
+            warnings.append("HTML: stale file-io.js reference")
         else:
-            print(f"  {green(chr(0x2713))} #input-pagewidth found")
+            print(f"  {green(chr(0x2713))} No stale file-io.js ref")
     else:
         errors.append("index.html not found")
 
@@ -126,28 +128,6 @@ def validate():
                 errors.append(f"JS: {label}")
     else:
         errors.append("js/editor.js not found")
-
-    # ---- 3b. file-io.js validation ----
-    print(f"\n{'[3b] file-io.js structure':<30}")
-    fio_path = ROOT / "js/file-io.js"
-    if fio_path.exists():
-        fio = fio_path.read_text(encoding="utf-8")
-        fio_patterns = {
-            "getVditor helper": r"function\s+getVditor\b",
-            "loadFile fn": r"function\s+loadFile\b",
-            "downloadFile fn": r"function\s+downloadFile\b",
-            "confirm before load": r"confirm\(",
-            "input-pagewidth binding": r"input-pagewidth",
-            "__applyPageWidth bridge": r"window\.__applyPageWidth",
-        }
-        for label, pattern in fio_patterns.items():
-            if re.search(pattern, fio):
-                print(f"  {green(chr(0x2713))} {label}")
-            else:
-                print(f"  {red(chr(0x2717))} {label} MISSING")
-                errors.append(f"file-io.js: {label}")
-    else:
-        errors.append("js/file-io.js not found")
 
     # ---- 4. CSS code validation ----
     print(f"\n{'[4] CSS structure':<30}")
@@ -170,8 +150,9 @@ def validate():
 
         checks = {
             "Container selector 'vditor'": r"new Vditor\('vditor'",
-            "__applyPageWidth bridge": r"window\.__applyPageWidth",
-            "__vditor bridge": r"window\.__vditor",
+            "Toolbar open button": r"name:\s*'open'",
+            "Toolbar save button": r"name:\s*'save'",
+            "Toolbar pagewidth button": r"name:\s*'pagewidth'",
             "Resize reapplies width": r"applyPageWidth\(pageWidth\)",
             "pageWidth from localStorage": r"localStorage\.getItem\('md-pagewidth'",
         }
@@ -222,7 +203,7 @@ if __name__ == "__main__":
 
     p = argparse.ArgumentParser(description="md-editor validation & dev server")
     p.add_argument("--serve", action="store_true", help="Start dev server")
-    p.add_argument("--port", type=int, default=8080, help="Server port (default: 8080)")
+    p.add_argument("--port", type=int, default=8777, help="Server port (default: 8777)")
     args = p.parse_args()
 
     if args.serve:
