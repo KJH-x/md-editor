@@ -5,83 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>md-editor — Markdown Editor</title>
   <link rel="stylesheet" href="https://unpkg.com/vditor/dist/index.css" />
-  <style>
-    body { margin: 0; overflow: hidden; }
-    #vditor { height: 100vh; }
-    .editor-brand {
-      position: fixed;
-      bottom: 8px;
-      right: 16px;
-      z-index: 999;
-      font-size: 12px;
-      color: #aaa;
-      pointer-events: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="vditor"></div>
+  <input type="file" id="file-input" accept=".md,.markdown,.txt" hidden>
+  <div class="file-toolbar">
+    <button id="btn-open" title="打开 Markdown 文件" aria-label="打开文件">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <button id="btn-save" title="保存为 Markdown 文件" aria-label="保存文件">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
+  </div>
   <div class="editor-brand">md-editor · Powered by Vditor</div>
   <script src="https://unpkg.com/vditor/dist/index.min.js"></script>
-  <script>
-    var vditor = new Vditor('vditor', {
-      mode: 'ir',
-      value: [
-        '# md-editor',
-        '',
-        '基于 Vditor 的 Markdown 编辑器，支持三种编辑模式。',
-        '',
-        '## 快速上手',
-        '',
-        '- 当前为 **IR（即时渲染）模式**：左侧编辑 Markdown 源码，右侧实时预览',
-        '- 通过工具栏可切换 WYSIWYG / IR / SV 模式',
-        '- 支持拖拽或粘贴上传图片',
-        '- 支持大纲导航、字数统计、代码高亮',
-        '',
-        '## 快捷键',
-        '',
-        '| 快捷键 | 功能 |',
-        '|--------|------|',
-        '| `Alt+Ctrl+7` | WYSIWYG 模式 |',
-        '| `Alt+Ctrl+8` | IR 即时渲染模式 |',
-        '| `Alt+Ctrl+9` | SV 分屏预览模式 |',
-        '',
-        '> 开始写作吧！'
-      ].join('\n'),
-      placeholder: '开始写作...',
-      height: window.innerHeight,
-      cache: { enable: true, id: 'md-editor' },
-      counter: { enable: true },
-      outline: { enable: true },
-      preview: {
-        hljs: { enable: true, style: 'github' },
-        markdown: {
-          autoSpace: true,
-          chinesePunct: true,
-          toc: true
-        }
-      },
-      toolbar: [
-        'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
-        'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
-        'quote', 'line', 'code', 'inline-code', '|',
-        'upload', 'table', '|',
-        'undo', 'redo', '|',
-        'edit-mode', 'content-theme', 'code-theme', 'export', '|',
-        'outline', 'fullscreen', 'help'
-      ],
-      toolbarConfig: { hide: false, pin: true },
-      upload: {
-        accept: 'image/*',
-        max: 10 * 1024 * 1024,
-        handler: null
-      }
-    });
-
-    window.addEventListener('resize', function () {
-      vditor.resize({ height: window.innerHeight });
-    });
-  </script>
+  <script src="js/editor.js"></script>
+  <script src="js/file-io.js"></script>
 </body>
 </html>

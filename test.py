@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""
+md-editor Validation & Dev Server
+
+Usage:
+  python test.py              # Validate project structure and references
+  python test.py --serve      # Start local dev server on :8080
+  python test.py --serve --port 3000  # Custom port
+"""
+import os
+import sys
+import re
+import json
+import http.server
+import socketserver
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+REQUIRED_FILES = [
+    "index.html",
+    "css/style.css",
+    "js/editor.js",
+    "LICENSE",
+    "README.md",
+    ".gitignore",
+]
+
+JS_REQUIRED_PATTERNS = {
+    "Vditor init": r"new Vditor\(",
+    "mode IR": r"mode:\s*'ir'",
+    "cache enabled": r"cache:\s*\{\s*enable:\s*true",
+    "counter enabled": r"counter:\s*\{\s*enable:\s*true",
+    "outline enabled": r"outline:\s*\{\s*enable:\s*true",
+    "pageWidths declared": r"var\s+pageWidths\s*=",
+    "applyPageWidth fn": r"function\s+applyPageWidth\b",
+    "cyclePageWidth fn": r"function\s+cyclePageWidth\b",
+    "pagewidth toolbar btn": r"name:\s*'pagewidth'",
+    "resize handler": r"addEventListener\('resize'",
+    "debug logging": r"function\s+log\b",
+    "IIFE wrapper": r"\(function\s*\(\)",
+    "use strict": r"'use strict'",
+}
+
+CSS_REQUIRED_PATTERNS = {
+    "body style": r"body\s*\{",
+    "vditor height": r"#vditor\s*\{",
+    "padding transition": r"transition:\s*padding",
+    "editor-brand": r"\.editor-brand\s*\{",
+}
+
+def green(s):
+    return f"\033[32m{s}\033[0m"
+
+def red(s):
+    return f"\033[31m{s}\033[0m"
+
+def yellow(s):
+    return f"\033[33m{s}\033[0m"
+
+def validate():
+    errors = []
+    warnings = []
+
+    print("=" * 56)
+    print("  md-editor — Validation")
+    print("=" * 56)
+
+    # ---- 1. File existence ----
+    print(f"\n{'[1] File existence':<30}", end=" ")
+    for f in REQUIRED_FILES:
+        if (ROOT / f).exists():
+            print(f"  {green(chr(0x2713))} {f}")
+        else:
+            print(f"  {red(chr(0x2717))} {f} MISSING")
+            errors.append(f"Missing file: {f}")
+
+    # ---- 2. HTML references ----
+    print(f"\n{'[2] HTML references':<30}")
+    html_path = ROOT / "index.html"
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        refs = []
+
+        for attr, pattern in [("href", r'href="([^"]+\.css)"'), ("src", r'src="([^"]+\.js)"')]:
+            for m in re.finditer(pattern, html):
+                ref = m.group(1)
+                label = "CDN" if ref.startswith("http") else "local"
+                refs.append((ref, label))
+
+        for ref, label in refs:
+            if label == "CDN":
+                print(f"  {green(chr(0x2713))} {ref} ({label})")
+            else:
+                p = ROOT / ref
+                if p.exists():
+                    print(f"  {green(chr(0x2713))} {ref}")
+                else:
+                    print(f"  {red(chr(0x2717))} {ref} NOT FOUND")
+                    errors.append(f"Reference not found: {ref}")
+
+        if 'id="vditor"' not in html:
+            errors.append("Missing #vditor container element")
+            print(f"  {red(chr(0x2717))} #vditor container MISSING")
+        else:
+            print(f"  {green(chr(0x2713))} #vditor container found")
+    else:
+        errors.append("index.html not found")
+
+    # ---- 3. JS code validation ----
+    print(f"\n{'[3] JS structure':<30}")
+    js_path = ROOT / "js/editor.js"
+    if js_path.exists():
+        js = js_path.read_text(encoding="utf-8")
+        for label, pattern in JS_REQUIRED_PATTERNS.items():
+            if re.search(pattern, js):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"JS: {label}")
+    else:
+        errors.append("js/editor.js not found")
+
+    # ---- 4. CSS code validation ----
+    print(f"\n{'[4] CSS structure':<30}")
+    css_path = ROOT / "css/style.css"
+    if css_path.exists():
+        css = css_path.read_text(encoding="utf-8")
+        for label, pattern in CSS_REQUIRED_PATTERNS.items():
+            if re.search(pattern, css):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {yellow('!')} {label} MISSING")
+                warnings.append(f"CSS: {label}")
+    else:
+        errors.append("css/style.css not found")
+
+    # ---- 5. DOM structure analysis (static) ----
+    print(f"\n{'[5] Editor initialization check':<30}")
+    if js_path.exists():
+        js = js_path.read_text(encoding="utf-8")
+
+        checks = {
+            "Container selector 'vditor'": r"new Vditor\('vditor'",
+            "Page width toolbar button": r"name:\s*'pagewidth'",
+            "Click handler wired": r"click:\s*function\s*\(\s*\)\s*\{\s*cyclePageWidth",
+            "Resize recalculates width": r"applyPageWidth\(pageWidths\[pageWidthIndex\]\)",
+        }
+        for label, pattern in checks.items():
+            if re.search(pattern, js):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label}")
+                errors.append(f"Init check: {label}")
+
+    # ---- Summary ----
+    print(f"\n{'=' * 56}")
+    if errors:
+        print(f"{red('FAILED')} — {len(errors)} error(s):")
+        for e in errors:
+            print(f"  {red(chr(0x2717))} {e}")
+    else:
+        print(f"{green('ALL CHECKS PASSED')}")
+
+    if warnings:
+        print(f"\n{yellow('WARNINGS')}:")
+        for w in warnings:
+            print(f"  {yellow('!')} {w}")
+
+    return len(errors) == 0
+
+
+def serve(port=8080):
+    os.chdir(ROOT)
+    handler = http.server.SimpleHTTPRequestHandler
+
+    class QuietHandler(handler):
+        def log_message(self, format, *args):
+            print(f"  [{self.log_date_time_string()}] {args[0]}")
+
+    with socketserver.TCPServer(("", port), QuietHandler) as httpd:
+        print(f"\n  Dev server running at: {green(f'http://localhost:{port}')}")
+        print(f"  Serving from: {ROOT}")
+        print(f"  Press Ctrl+C to stop\n")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print(f"\n  Server stopped.")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    p = argparse.ArgumentParser(description="md-editor validation & dev server")
+    p.add_argument("--serve", action="store_true", help="Start dev server")
+    p.add_argument("--port", type=int, default=8080, help="Server port (default: 8080)")
+    args = p.parse_args()
+
+    if args.serve:
+        serve(args.port)
+    else:
+        ok = validate()
+        sys.exit(0 if ok else 1)
