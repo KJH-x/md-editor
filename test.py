@@ -4,7 +4,7 @@ md-editor Validation & Dev Server
 
 Usage:
   python test.py              # Validate project structure and references
-  python test.py --serve      # Start local dev server on :8080
+  python test.py --serve      # Start local dev server on :8777
   python test.py --serve --port 3000  # Custom port
 """
 import os
@@ -13,6 +13,7 @@ import re
 import json
 import http.server
 import socketserver
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -24,12 +25,16 @@ REQUIRED_FILES = [
     "LICENSE",
     "README.md",
     ".gitignore",
+    "_headers",
+    "vendor/vditor/LICENSE",
+    "vendor/vditor/dist/index.css",
+    "vendor/vditor/dist/index.min.js",
 ]
 
 JS_REQUIRED_PATTERNS = {
     "Vditor init": r"new Vditor\(",
     "mode IR": r"mode:\s*'ir'",
-    "cache enabled": r"cache:\s*\{\s*enable:\s*true",
+    "localStorage cache disabled": r"cache:\s*\{\s*enable:\s*false",
     "counter enabled": r"counter:\s*\{\s*enable:\s*true",
     "outline enabled": r"outline:\s*\{\s*enable:\s*true",
     "applyPageWidth fn": r"function\s+applyPageWidth\b",
@@ -38,6 +43,10 @@ JS_REQUIRED_PATTERNS = {
     "toolbar pagewidth button": r"name:\s*'pagewidth'",
     "resize handler": r"addEventListener\('resize'",
     "MutationObserver": r"MutationObserver",
+    "ready callback": r"after:\s*function",
+    "IndexedDB draft storage": r"indexedDB\.open",
+    "explicit Markdown sanitizer": r"sanitize:\s*true",
+    "pinned local Vditor assets": r"vendor/vditor",
     "contentAreas fn": r"function\s+contentAreas\b",
     "debug logging": r"function\s+log\b",
     "IIFE wrapper": r"\(function\s*\(\)",
@@ -87,12 +96,13 @@ def validate():
         for attr, pattern in [("href", r'href="([^"]+\.css)"'), ("src", r'src="([^"]+\.js)"')]:
             for m in re.finditer(pattern, html):
                 ref = m.group(1)
-                label = "CDN" if ref.startswith("http") else "local"
+                label = "external" if ref.startswith("http") else "local"
                 refs.append((ref, label))
 
         for ref, label in refs:
-            if label == "CDN":
-                print(f"  {green(chr(0x2713))} {ref} ({label})")
+            if label == "external":
+                print(f"  {red(chr(0x2717))} {ref} EXTERNAL")
+                errors.append(f"External runtime dependency: {ref}")
             else:
                 p = ROOT / ref
                 if p.exists():
@@ -154,7 +164,7 @@ def validate():
             "Toolbar save button": r"name:\s*'save'",
             "Toolbar pagewidth button": r"name:\s*'pagewidth'",
             "Resize reapplies width": r"applyPageWidth\(pageWidth\)",
-            "pageWidth from localStorage": r"localStorage\.getItem\('md-pagewidth'",
+            "pageWidth from guarded storage": r"safeStorageGet\('md-pagewidth'",
         }
         for label, pattern in checks.items():
             if re.search(pattern, js):
@@ -162,6 +172,24 @@ def validate():
             else:
                 print(f"  {red(chr(0x2717))} {label}")
                 errors.append(f"Init check: {label}")
+
+        if re.search(r"\bvditor\.resize\s*\(", js):
+            print(f"  {red(chr(0x2717))} Unsupported vditor.resize call")
+            errors.append("Unsupported vditor.resize call")
+        else:
+            print(f"  {green(chr(0x2713))} No unsupported vditor.resize call")
+
+        node = subprocess.run(
+            ["node", "--check", str(js_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if node.returncode == 0:
+            print(f"  {green(chr(0x2713))} JavaScript syntax")
+        else:
+            print(f"  {red(chr(0x2717))} JavaScript syntax")
+            errors.append(node.stderr.strip() or "JavaScript syntax check failed")
 
     # ---- Summary ----
     print(f"\n{'=' * 56}")
