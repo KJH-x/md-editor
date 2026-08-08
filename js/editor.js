@@ -19,6 +19,10 @@
   var userEdited = false;
   var restoringDraft = false;
   var vditor = null;
+  var THEME_KEY = 'md-theme';
+  var theme = safeStorageGet(THEME_KEY) ||
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') || 'light';
+  document.documentElement.setAttribute('data-theme', theme);
 
   function log(tag, msg, data) {
     if (!DEBUG) return;
@@ -35,9 +39,11 @@
     clearTimeout(saveStatusTimer);
     saveStatus.textContent = message;
     saveStatus.classList.toggle('is-error', !!isError);
+    saveStatus.classList.toggle('is-saving', !isError && /^正在/.test(message || ''));
     if (!isError && message) {
       saveStatusTimer = setTimeout(function () {
         saveStatus.textContent = '';
+        saveStatus.classList.remove('is-error', 'is-saving');
       }, 2400);
     }
   }
@@ -68,6 +74,35 @@
     } catch (err) {
       log('storage', 'localStorage remove failed', err);
     }
+  }
+
+  var THEME_ICONS = {
+    light: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+  };
+
+  var CONTENT_THEME_PATH = new URL('vendor/vditor/dist/css/content-theme', document.baseURI).href.replace(/\/$/, '');
+
+  function updateThemeIcon() {
+    var btn = document.querySelector('.vditor-toolbar button[data-type="theme"]');
+    if (!btn) return;
+    btn.innerHTML = THEME_ICONS[theme] || THEME_ICONS.light;
+  }
+
+  function applyTheme(next) {
+    theme = next;
+    document.documentElement.setAttribute('data-theme', theme);
+    if (vditor) {
+      try {
+        vditor.setTheme(theme, theme === 'dark' ? 'dark' : 'light',
+          theme === 'dark' ? 'github-dark' : 'github', CONTENT_THEME_PATH);
+      } catch (err) {
+        log('theme', 'setTheme failed', err);
+      }
+    }
+    updateThemeIcon();
+    safeStorageSet(THEME_KEY, theme);
+    log('theme', 'Theme set to ' + theme);
   }
 
   function openDatabase() {
@@ -150,26 +185,25 @@
 
   function contentAreas() {
     var areas = [];
-    var editors = document.querySelectorAll('#vditor [contenteditable="true"]');
-    for (var i = 0; i < editors.length; i++) areas.push(editors[i]);
-    var textareas = document.querySelectorAll('#vditor .vditor-sv textarea');
-    for (var j = 0; j < textareas.length; j++) areas.push(textareas[j]);
-    var previews = document.querySelectorAll('#vditor .vditor-ir__preview, #vditor .vditor-sv__preview');
-    for (var k = 0; k < previews.length; k++) areas.push(previews[k]);
+    var wrappers = document.querySelectorAll(
+      '.vditor-content > .vditor-wysiwyg, .vditor-content > .vditor-sv.vditor-reset, ' +
+      '.vditor-content > .vditor-ir, .vditor-content > .vditor-preview');
+    for (var i = 0; i < wrappers.length; i++) areas.push(wrappers[i]);
     return areas;
   }
 
   function applyPageWidth(value) {
+    if (value === '' || value === null || value === undefined) return;
     var num = parseInt(value, 10);
-    var pad = (!num || num <= 0) ? '' : Math.max(0, (window.innerWidth - num) / 2) + 'px';
+    var maxWidth = (!num || num <= 0) ? 'none' : num + 'px';
     var areas = contentAreas();
     for (var i = 0; i < areas.length; i++) {
-      areas[i].style.paddingLeft = pad;
-      areas[i].style.paddingRight = pad;
+      areas[i].style.maxWidth = maxWidth;
+      areas[i].style.marginLeft = 'auto';
+      areas[i].style.marginRight = 'auto';
     }
-    log('width', pad ? 'Applied ' + num + 'px' : 'Reset to full width', {
-      maxWidth: num,
-      pad: pad,
+    log('width', maxWidth === 'none' ? 'Reset to full width' : 'Applied ' + num + 'px', {
+      maxWidth: maxWidth,
       targets: areas.length
     });
   }
@@ -294,6 +328,7 @@
     counter: { enable: true },
     outline: { enable: true, position: 'left' },
     preview: {
+      maxWidth: 4096,
       hljs: { enable: true, style: 'github' },
       markdown: {
         autoSpace: true,
@@ -308,7 +343,7 @@
       'quote', 'line', 'code', 'inline-code', '|',
       'upload', 'table', '|',
       'undo', 'redo', '|',
-      'edit-mode', 'content-theme', 'code-theme', 'export', '|',
+      'edit-mode', 'content-theme', 'code-theme', 'theme', 'export', '|',
       'outline', 'fullscreen',
       {
         name: 'open',
@@ -374,6 +409,14 @@
           }
         }
       },
+      {
+        name: 'theme',
+        tip: '切换浅色 / 深色主题',
+        icon: THEME_ICONS.light,
+        click: function () {
+          applyTheme(theme === 'dark' ? 'light' : 'dark');
+        }
+      },
       'help'
     ],
     toolbarConfig: { hide: false, pin: true },
@@ -390,6 +433,7 @@
     },
     after: function () {
       editorReady = true;
+      applyTheme(theme);
       if (DEBUG) {
         window.__mdEditorTest = {
           editor: vditor,
