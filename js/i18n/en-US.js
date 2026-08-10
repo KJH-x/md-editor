@@ -96,6 +96,14 @@
     'action.mode.sv': 'Switch to SV split preview mode',
     'action.theme.cycle': 'Cycle theme (light / dark / system)',
     'action.lang.switch': 'Switch language',
-    'action.findReplace': 'Find and replace'
+    'action.findReplace': 'Find and replace',
+    'formatbar.label': 'Formatting',
+    'formatbar.bold': 'Bold',
+    'formatbar.italic': 'Italic',
+    'formatbar.strike': 'Strikethrough',
+    'formatbar.inlineCode': 'Inline code',
+    'formatbar.link': 'Link',
+    'formatbar.highlight': 'Highlight',
+    'formatbar.quote': 'Quote'
   };
 })();

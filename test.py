@@ -60,6 +60,7 @@ JS_REQUIRED_PATTERNS = {
     "file-io sanitize": r"sanitizeFilename",
     "file-io decode": r"decodeFile",
     "action registry": r"MD_ACTIONS",
+    "floating format bar module": r"MDFormatBar",
 }
 
 CSS_REQUIRED_PATTERNS = {

@@ -722,6 +722,83 @@ body {
   color: #ffffff;
 }
 
+/* ---- Floating format bar ---- */
+
+#md-formatbar {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  background: var(--md-panel-bg);
+  box-shadow: var(--md-shadow);
+}
+
+#md-formatbar[hidden] {
+  display: none;
+}
+
+#md-formatbar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+}
+
+#md-formatbar[data-pos="above"]::after {
+  top: 100%;
+  border-top-color: var(--md-border);
+}
+
+#md-formatbar[data-pos="below"]::after {
+  bottom: 100%;
+  border-bottom-color: var(--md-border);
+}
+
+.md-formatbar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-icon);
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.md-formatbar__btn:hover {
+  color: var(--md-icon-hover);
+  background-color: var(--md-icon-hover-bg);
+}
+
+.md-formatbar__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: -2px;
+}
+
+.md-formatbar__btn:disabled {
+  color: color-mix(in srgb, var(--md-icon) 35%, transparent);
+  cursor: default;
+}
+
+.md-formatbar__btn:disabled:hover {
+  background: transparent;
+  color: color-mix(in srgb, var(--md-icon) 35%, transparent);
+}
+
+.md-formatbar__btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* ---- Status bar ---- */
 
 #statusbar {

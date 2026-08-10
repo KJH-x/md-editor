@@ -96,6 +96,14 @@
     'action.mode.sv': '切换到 SV 分屏预览模式',
     'action.theme.cycle': '循环切换主题（浅色 / 深色 / 跟随系统）',
     'action.lang.switch': '切换语言',
-    'action.findReplace': '查找与替换'
+    'action.findReplace': '查找与替换',
+    'formatbar.label': '文本格式',
+    'formatbar.bold': '加粗',
+    'formatbar.italic': '斜体',
+    'formatbar.strike': '删除线',
+    'formatbar.inlineCode': '行内代码',
+    'formatbar.link': '链接',
+    'formatbar.highlight': '高亮标记',
+    'formatbar.quote': '引用'
   };
 })();
