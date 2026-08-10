@@ -11,6 +11,16 @@ The two vendored libraries:
 Cloudflare serves `vendor/*` with `Cache-Control: public, max-age=31536000, immutable`
 (see `_headers`), so a vendor update is **not** picked up by clients unless the cache is purged.
 
+> **Every deploy note**: `/js/*` and `/css/*` use `stale-while-revalidate` and Pages may keep a
+> stale edge copy for a short window after any deploy (not just vendor updates). If a deployment
+> isn't picked up, purge `/js/*`, `/css/*`, `/index.html`, `/sw.js` (see step 3) — or the whole
+> zone with `{"purge_everything":true}`.
+
+> **Clean-URL note**: Cloudflare Pages redirects `vditor-shell.html` → `/vditor-shell` (308).
+> All code must reference the clean URL `/vditor-shell` (the shell's iframe `src` and the SW
+> precache entry); `_headers` preloads are scoped to `/vditor-shell`. Local dev serves the
+> extensionless path via a fallback in `test.py` so behavior matches production.
+
 > Replace `<REPO>` below with the path to this repo, and `<VER>` with the target version.
 
 ## 1. Download the pinned release and replace the subtree
