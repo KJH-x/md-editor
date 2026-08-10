@@ -59,6 +59,8 @@
 
   var effectiveInit = resolveTheme(theme);
   document.documentElement.setAttribute('data-theme', effectiveInit);
+  var MD_TYPEWRITER_KEY = 'md-typewriter';
+  var typewriterMode = safeStorageGet(MD_TYPEWRITER_KEY) !== '0';
 
   function log(tag, msg, data) {
     if (!DEBUG) return;
@@ -450,6 +452,60 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     if (force) saveDraftNow(content);
     log('save', 'Downloaded: ' + filename);
+}
+
+  function transformCallouts(html) {
+    return html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function (blockquote, inner) {
+      if (blockquote.indexOf('callout') !== -1) return blockquote;
+      var match = inner.match(/<p(?:[^>]*)>\[!(NOTE|TIP|WARNING|DANGER)\]\s*([\s\S]*?)<\/p>/);
+      if (!match) return blockquote;
+      var type = match[1];
+      var label = type.charAt(0) + type.slice(1).toLowerCase();
+      var rest = inner.slice(match.index + match[0].length);
+      return '<blockquote class="callout callout--' + type.toLowerCase() + '">' +
+        '<p class="callout-label">' + label + '</p>' +
+        '<p>' + match[2] + '</p>' + rest + '</blockquote>';
+    });
+  }
+
+  function editorCursorTop(element) {
+    var selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return 0;
+    var rect = selection.getRangeAt(0).getBoundingClientRect();
+    if (!rect || !rect.top) return 0;
+    var elementRect = element.getBoundingClientRect();
+    return rect.top - elementRect.top + element.scrollTop;
+  }
+
+  function applyTypewriterPosition() {
+    if (!vditor || !vditor.vditor || !vditor.vditor.toolbar) return;
+    var editor = vditor.vditor;
+    var element = editor[editor.currentMode].element;
+    if (!editor.options.typewriterMode) {
+      element.style.removeProperty('--editor-bottom');
+      return;
+    }
+    var height = editor.element.classList.contains('vditor--fullscreen') ?
+      window.innerHeight : editor.element.clientHeight;
+    var bottom = Math.max(0, Math.round((height - editor.toolbar.element.offsetHeight) / 2));
+    element.style.setProperty('--editor-bottom', bottom + 'px');
+    var cursorTop = editorCursorTop(element);
+    element.scrollTop = cursorTop + element.scrollTop - element.clientHeight / 2 + 10;
+  }
+
+  function updateTypewriterButton() {
+    if (!vditor || !vditor.vditor || !vditor.vditor.toolbar || !vditor.vditor.toolbar.elements ||
+        !vditor.vditor.toolbar.elements.typewriter) return;
+    var button = vditor.vditor.toolbar.elements.typewriter.children[0];
+    if (button) button.classList.toggle('vditor-menu--current', !!vditor.vditor.options.typewriterMode);
+  }
+
+  function toggleTypewriter() {
+    typewriterMode = !vditor.vditor.options.typewriterMode;
+    vditor.vditor.options.typewriterMode = typewriterMode;
+    safeStorageSet(MD_TYPEWRITER_KEY, typewriterMode ? '1' : '0');
+    applyTypewriterPosition();
+    updateTypewriterButton();
   }
 
   function mutationsAddContentArea(mutations) {
@@ -621,6 +677,8 @@
     cache: { enable: false },
     counter: { enable: true },
     outline: { enable: true, position: 'left' },
+    tab: '\t',
+    typewriterMode: typewriterMode,
     preview: {
       maxWidth: 4096,
       theme: { current: effectiveInit, list: {} },
@@ -629,16 +687,114 @@
         autoSpace: true,
         toc: true,
         sanitize: true
+      },
+      math: {
+        engine: 'KaTeX',
+        inlineDigit: true,
+        macros: {}
+      },
+      transform: function (html) {
+        return transformCallouts(html);
       }
     },
     toolbar: [
       'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
-      'list', 'ordered-list', 'check', 'outdent', 'indent', '|',
+      'list', 'ordered-list', 'check',
+      { name: 'outdent', hotkey: '⇧Tab', tipPosition: 'n' },
+      'indent', '|',
       'quote', 'line', 'code', 'inline-code', '|',
-      'upload', 'table', '|',
+      'upload', 'table',
+      {
+        name: 'diagram',
+        tip: '插入图表',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        toolbar: [
+          {
+            name: 'mermaid',
+            tip: 'Mermaid',
+            icon: 'Mermaid',
+            click: function () {
+              vditor.insertValue('```mermaid\ngraph TD\n  A-->B\n```\n', true);
+            }
+          },
+          {
+            name: 'echarts',
+            tip: 'ECharts',
+            icon: 'ECharts',
+            click: function () {
+              vditor.insertValue('```echarts\n{\n  "title": { "text": "示例图表" },\n  "tooltip": {},\n  "xAxis": { "type": "category", "data": ["A", "B", "C"] },\n  "yAxis": { "type": "value" },\n  "series": [{ "type": "bar", "data": [5, 8, 3] }]\n}\n```\n', true);
+            }
+          },
+          {
+            name: 'mindmap',
+            tip: 'Mindmap',
+            icon: 'Mindmap',
+            click: function () {
+              vditor.insertValue('```mindmap\n# 主题\n## 一级分支\n### 二级分支\n```\n', true);
+            }
+          },
+          {
+            name: 'markmap',
+            tip: 'Markmap',
+            icon: 'Markmap',
+            click: function () {
+              vditor.insertValue('```markmap\n# 主题\n## 分支\n```\n', true);
+            }
+          },
+          {
+            name: 'flowchart',
+            tip: 'Flowchart',
+            icon: 'Flowchart',
+            click: function () {
+              vditor.insertValue('```flow\nst=>start: 开始\ne=>end: 结束\nop=>operation: 处理\ncond=>condition: 是否通过?\nst->op->cond\ncond(no)->op\ncond(yes)->e\n```\n', true);
+            }
+          },
+          {
+            name: 'graphviz',
+            tip: 'Graphviz',
+            icon: 'Graphviz',
+            click: function () {
+              vditor.insertValue('```graphviz\ndigraph G {\n  A -> B;\n  B -> C;\n}\n```\n', true);
+            }
+          },
+          {
+            name: 'plantuml',
+            tip: 'PlantUML',
+            icon: 'PlantUML',
+            click: function () {
+              vditor.insertValue('```plantuml\n@startuml\nAlice -> Bob: Hello\n@enduml\n```\n', true);
+            }
+          },
+          {
+            name: 'abc',
+            tip: 'ABC',
+            icon: 'ABC',
+            click: function () {
+              vditor.insertValue('```abc\nX:1\nT:示例曲谱\nM:4/4\nL:1/4\nK:C\nC D E F | G A B c |\n```\n', true);
+            }
+          },
+          {
+            name: 'smiles',
+            tip: 'SMILES',
+            icon: 'SMILES',
+            click: function () {
+              vditor.insertValue('```smiles\nC(C(=O)O)N\n```\n', true);
+            }
+          }
+        ]
+      },
+      '|',
       'undo', 'redo', '|',
       'edit-mode', 'code-theme', 'export', '|',
       'outline', 'fullscreen',
+      {
+        name: 'typewriter',
+        tip: '打字机模式',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+        click: toggleTypewriter
+      },
+      'br',
+      'insert-before', 'insert-after', 'both', 'preview', '|', 'devtools',
       {
         name: 'open',
         tip: '打开 Markdown 文件',
@@ -711,6 +867,11 @@
       document.addEventListener('fullscreenchange', updateStatusVisibility);
       document.addEventListener('webkitfullscreenchange', updateStatusVisibility);
       applyTheme(theme);
+      applyTypewriterPosition();
+      updateTypewriterButton();
+      if (vditor.vditor.options.preview.transform) {
+        log('preview', 'callout transform attached');
+      }
       if (DEBUG) {
         window.__mdEditorTest = {
           editor: vditor,
@@ -752,6 +913,24 @@
       });
       observer.observe(document.getElementById('vditor'), { childList: true, subtree: true });
     }
+  });
+
+  window.addEventListener('keydown', function (event) {
+    if (!event.shiftKey || event.key !== 'Tab') return;
+    if (!vditor || !vditor.vditor || !vditor.vditor.toolbar || !vditor.vditor.toolbar.elements) return;
+    var container = document.getElementById('vditor');
+    if (!container || !container.contains(event.target)) return;
+    var selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      var node = selection.getRangeAt(0).commonAncestorContainer;
+      if (node.nodeType === 3) node = node.parentElement;
+      if (node && node.closest && node.closest('td, th')) return;
+    }
+    var outdent = vditor.vditor.toolbar.elements.outdent;
+    if (!outdent || !outdent.children[0]) return;
+    if (outdent.children[0].classList.contains('vditor-menu--disabled')) return;
+    event.preventDefault();
+    outdent.children[0].click();
   });
 
   window.addEventListener('resize', function () {
