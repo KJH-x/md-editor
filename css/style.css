@@ -226,6 +226,61 @@ body {
   font-family: var(--md-font);
 }
 
+/* ---- Callouts (GitHub alerts) ---- */
+
+.vditor-reset blockquote.callout {
+  position: relative;
+  margin: 1em 0 16px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--md-border);
+  border-radius: 0 var(--md-radius) var(--md-radius) 0;
+  background: color-mix(in srgb, var(--md-muted) 8%, var(--md-content-bg));
+  color: var(--md-text);
+}
+
+.vditor-reset blockquote.callout > p:first-child {
+  margin-top: 0;
+}
+
+.vditor-reset blockquote.callout .callout-label {
+  display: block;
+  margin: 0 0 4px;
+  font-weight: 600;
+  font-size: 0.93em;
+}
+
+.vditor-reset blockquote.callout--note {
+  border-left-color: var(--md-accent);
+}
+
+.vditor-reset blockquote.callout--note .callout-label {
+  color: var(--md-accent);
+}
+
+.vditor-reset blockquote.callout--tip {
+  border-left-color: var(--md-success);
+}
+
+.vditor-reset blockquote.callout--tip .callout-label {
+  color: var(--md-success);
+}
+
+.vditor-reset blockquote.callout--warning {
+  border-left-color: var(--md-warning);
+}
+
+.vditor-reset blockquote.callout--warning .callout-label {
+  color: var(--md-warning);
+}
+
+.vditor-reset blockquote.callout--danger {
+  border-left-color: var(--md-danger);
+}
+
+.vditor-reset blockquote.callout--danger .callout-label {
+  color: var(--md-danger);
+}
+
 ::selection {
   background: var(--md-selection);
 }
