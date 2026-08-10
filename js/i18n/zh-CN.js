@@ -123,6 +123,14 @@
     'slash.mermaid': 'Mermaid 图表',
     'slash.callout': '提示框',
     'slash.hr': '分割线',
-    'slash.image': '图片'
+    'slash.image': '图片',
+    'formatbar.label': '文本格式',
+    'formatbar.bold': '加粗',
+    'formatbar.italic': '斜体',
+    'formatbar.strike': '删除线',
+    'formatbar.inlineCode': '行内代码',
+    'formatbar.link': '链接',
+    'formatbar.highlight': '高亮标记',
+    'formatbar.quote': '引用'
   };
 })();

@@ -62,6 +62,7 @@ JS_REQUIRED_PATTERNS = {
     "action registry": r"MD_ACTIONS",
     "command palette": r"MDCommandPalette",
     "slash menu": r"MDSlashMenu",
+    "floating format bar module": r"MDFormatBar",
 }
 
 CSS_REQUIRED_PATTERNS = {

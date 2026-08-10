@@ -97,7 +97,6 @@
     'action.theme.cycle': 'Cycle theme (light / dark / system)',
     'action.lang.switch': 'Switch language',
     'action.findReplace': 'Find and replace',
-<<<<<<< HEAD
     'action.palette': 'Open command palette',
     'palette.title': 'Command palette',
     'palette.placeholder': 'Search actions…',
@@ -124,6 +123,14 @@
     'slash.mermaid': 'Mermaid diagram',
     'slash.callout': 'Callout',
     'slash.hr': 'Horizontal rule',
-    'slash.image': 'Image'
+    'slash.image': 'Image',
+    'formatbar.label': 'Formatting',
+    'formatbar.bold': 'Bold',
+    'formatbar.italic': 'Italic',
+    'formatbar.strike': 'Strikethrough',
+    'formatbar.inlineCode': 'Inline code',
+    'formatbar.link': 'Link',
+    'formatbar.highlight': 'Highlight',
+    'formatbar.quote': 'Quote'
   };
 })();

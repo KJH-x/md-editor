@@ -803,7 +803,8 @@
         markdown: {
           autoSpace: true,
           toc: true,
-          sanitize: true
+          sanitize: true,
+          mark: true
         },
         math: {
           engine: 'KaTeX',
@@ -987,6 +988,16 @@
       ctrlEnter: function () {
         saveDraftNow(vditor.getValue());
       },
+      select: function (value) {
+        if (value && value.trim()) {
+          window.MDFormatBar.show();
+        } else if (window.MDFormatBar) {
+          window.MDFormatBar.hide();
+        }
+      },
+      unSelect: function () {
+        if (window.MDFormatBar) window.MDFormatBar.hide();
+      },
       after: function () {
         editorReady = true;
         patchHintRender();
@@ -1016,6 +1027,9 @@
         applyTheme(theme);
         applyTypewriterPosition();
         updateTypewriterButton();
+        if (window.MDFormatBar && window.MDFormatBar.attach) {
+          window.MDFormatBar.attach(vditor);
+        }
         buildActionRegistry();
         if (window.MDCommandPalette && typeof window.MDCommandPalette.ensure === 'function') {
           window.MDCommandPalette.ensure();
@@ -1251,6 +1265,28 @@
   window.addEventListener('resize', function () {
     applyPageWidth(pageWidth);
   });
+
+  var formatbarTimer = null;
+  var FORMATBAR_DEBOUNCE = 60;
+
+  function scheduleFormatBar() {
+    clearTimeout(formatbarTimer);
+    formatbarTimer = setTimeout(updateFormatBar, FORMATBAR_DEBOUNCE);
+  }
+
+  function updateFormatBar() {
+    formatbarTimer = null;
+    if (!window.MDFormatBar) return;
+    var selection = window.getSelection();
+    var hasSelection = !!(selection && selection.rangeCount > 0 && !selection.isCollapsed);
+    var sv = document.querySelector('.vditor-sv textarea');
+    if (sv && sv.selectionStart !== sv.selectionEnd) hasSelection = true;
+    if (hasSelection) window.MDFormatBar.show();
+    else window.MDFormatBar.hide();
+  }
+
+  document.addEventListener('selectionchange', scheduleFormatBar);
+  document.addEventListener('mouseup', scheduleFormatBar);
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') flushDraft();
