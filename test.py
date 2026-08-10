@@ -65,6 +65,8 @@ JS_REQUIRED_PATTERNS = {
     "slash menu": r"MDSlashMenu",
     "floating format bar module": r"MDFormatBar",
     "find & replace": r"MDFindReplace",
+    "accessibility keys (a11y)": r"a11y",
+    "aria-label usage": r"aria-label",
 }
 
 CSS_REQUIRED_PATTERNS = {

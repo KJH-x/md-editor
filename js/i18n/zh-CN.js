@@ -141,6 +141,9 @@
     'find.replaceAll': "全部替换",
     'find.case': "区分大小写",
     'find.next': "下一个",
-    'find.prev': "上一个"
+    'find.prev': "上一个",
+    'a11y.upload': '上传图片',
+    'a11y.editorLabel': '编辑器内容区',
+    'a11y.hintMenu': '编辑器命令菜单'
   };
 })();

@@ -767,6 +767,124 @@
     };
   }
 
+  function a11yUploadTrigger() {
+    var trigger = document.querySelector('.vditor-toolbar__item [data-type="upload"]');
+    if (!trigger || trigger.tagName === 'BUTTON') return;
+    var item = trigger.parentElement;
+    if (!item) return;
+    var input = trigger.querySelector('input[type="file"]');
+    var svg = trigger.querySelector('svg');
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('data-type', 'upload');
+    button.className = trigger.className;
+    button.setAttribute('aria-label', mdI18n.t('a11y.upload'));
+    if (svg) button.appendChild(svg);
+    if (input) {
+      trigger.removeChild(input);
+      input.tabIndex = -1;
+      input.setAttribute('aria-hidden', 'true');
+      input.style.pointerEvents = 'none';
+    }
+    item.replaceChild(button, trigger);
+    if (input) item.appendChild(input);
+    button.addEventListener('click', function () {
+      if (button.classList.contains('vditor-menu--disabled')) return;
+      if (input) input.click();
+    });
+  }
+
+  function a11yEditorLabels() {
+    var label = mdI18n.t('a11y.editorLabel');
+    var roots = document.querySelectorAll('.vditor-ir, .vditor-wysiwyg, .vditor-sv, .vditor-preview');
+    for (var i = 0; i < roots.length; i++) {
+      var root = roots[i];
+      if (root.getAttribute('contenteditable') === 'true') {
+        root.setAttribute('aria-label', label);
+      } else {
+        var editable = root.querySelector('[contenteditable="true"]');
+        if (editable) editable.setAttribute('aria-label', label);
+      }
+      if (root.classList.contains('vditor-preview')) {
+        root.setAttribute('role', 'region');
+        root.setAttribute('aria-label', label);
+      }
+    }
+  }
+
+  function a11ySyncExpanded(button, panel) {
+    button.setAttribute('aria-expanded', panel.style.display === 'block' ? 'true' : 'false');
+  }
+
+  function a11yPanelButtons() {
+    var editor = vditor && vditor.vditor;
+    if (!editor || !editor.toolbar || !editor.toolbar.elements) return;
+    var names = ['emoji', 'headings', 'edit-mode', 'content-theme', 'code-theme', 'export'];
+    for (var n = 0; n < names.length; n++) {
+      var item = editor.toolbar.elements[names[n]];
+      if (!item) continue;
+      var button = item.children[0];
+      if (!button) continue;
+      var panel = null;
+      for (var c = 0; c < item.children.length; c++) {
+        var child = item.children[c];
+        if (child.classList && (child.classList.contains('vditor-panel') ||
+            child.classList.contains('vditor-hint'))) {
+          panel = child;
+          break;
+        }
+      }
+      if (!panel) continue;
+      button.setAttribute('aria-haspopup', 'menu');
+      a11ySyncExpanded(button, panel);
+      button.addEventListener('click', (function (b, p) {
+        return function () { a11ySyncExpanded(b, p); };
+      }(button, panel)));
+      var observer = new MutationObserver((function (b, p) {
+        return function () { a11ySyncExpanded(b, p); };
+      }(button, panel)));
+      observer.observe(panel, { attributes: true, attributeFilter: ['style'] });
+    }
+  }
+
+  function a11yHintMenu() {
+    var editor = vditor && vditor.vditor;
+    if (!editor || !editor.hint || !editor.hint.element) return;
+    var hint = editor.hint.element;
+    var label = mdI18n.t('a11y.hintMenu');
+    function patch() {
+      if (hint.style.display === 'none') return;
+      hint.setAttribute('role', 'menu');
+      hint.setAttribute('aria-label', label);
+      var buttons = hint.querySelectorAll('button');
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute('role', 'menuitem');
+      }
+    }
+    patch();
+    var observer = new MutationObserver(patch);
+    observer.observe(hint, { attributes: true, attributeFilter: ['style'], childList: true, subtree: true });
+  }
+
+  function a11yToolbarDisabled() {
+    var toolbar = document.querySelector('.vditor-toolbar');
+    if (!toolbar) return;
+    function sync() {
+      var buttons = toolbar.querySelectorAll('.vditor-toolbar__item > button');
+      for (var i = 0; i < buttons.length; i++) {
+        var btn = buttons[i];
+        if (btn.classList.contains('vditor-menu--disabled')) {
+          btn.setAttribute('aria-disabled', 'true');
+        } else {
+          btn.removeAttribute('aria-disabled');
+        }
+      }
+    }
+    sync();
+    var observer = new MutationObserver(sync);
+    observer.observe(toolbar, { attributes: true, attributeFilter: ['class'], subtree: true });
+  }
+
   var draftPromise = readDraft().catch(function (err) {
     setSaveStatus(mdI18n.t('storage.unavailable'), true, 'error');
     log('storage', 'Draft read failed', err);
@@ -1008,6 +1126,11 @@
         updateEmptyState();
         renderStatusBar();
         mdI18n.applyI18n();
+        a11yEditorLabels();
+        a11yUploadTrigger();
+        a11yPanelButtons();
+        a11yHintMenu();
+        a11yToolbarDisabled();
         var chromeObserver = new MutationObserver(function () {
           renderModeLang();
           updateStatusVisibility();
