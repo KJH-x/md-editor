@@ -170,6 +170,8 @@
     'overlay.s.closeTab': '关闭当前标签页 (Ctrl+W)',
     'overlay.s.nextTab': '切换到下一个标签页 (Ctrl+Tab)',
     'overlay.s.palette': '打开命令面板 (Ctrl+K)',
-    'sw.updateReady': '新版本已就绪，刷新以更新'
+    'sw.updateReady': '新版本已就绪，刷新以更新',
+    'shell.closeConfirmTitle': '关闭标签页',
+    'shell.closeConfirm': '此标签页有未保存的修改，关闭后可能丢失。确定关闭？'
   };
 })();

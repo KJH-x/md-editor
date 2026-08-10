@@ -170,6 +170,8 @@
     'overlay.s.closeTab': 'Close current tab (Ctrl+W)',
     'overlay.s.nextTab': 'Switch to next tab (Ctrl+Tab)',
     'overlay.s.palette': 'Open command palette (Ctrl+K)',
-    'sw.updateReady': 'New version ready - refresh to update'
+    'sw.updateReady': 'New version ready - refresh to update',
+    'shell.closeConfirmTitle': 'Close tab',
+    'shell.closeConfirm': 'This tab has unsaved changes that may be lost. Close anyway?'
   };
 })();

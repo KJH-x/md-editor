@@ -11,7 +11,7 @@
   Cache-Control: public, max-age=0, must-revalidate
   Link: </vendor/vditor/dist/index.min.js>; rel=preload; as=script, </vendor/vditor/dist/js/icons/ant.js>; rel=preload; as=script
 
-/vditor-shell.html
+/vditor-shell
   Link: </vendor/vditor/dist/index.min.js>; rel=preload; as=script, </vendor/vditor/dist/js/icons/ant.js>; rel=preload; as=script, </vendor/vditor/dist/index.css>; rel=preload; as=style
 
 /js/*

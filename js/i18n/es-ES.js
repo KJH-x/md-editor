@@ -170,7 +170,8 @@
     'overlay.s.closeTab': "Cerrar pestaña actual (Ctrl+W)",
     'overlay.s.nextTab': "Cambiar a la pestaña siguiente (Ctrl+Tab)",
     'overlay.s.palette': "Abrir la paleta de comandos (Ctrl+K)",
-    'sw.updateReady': "Nueva versión lista - recarga para actualizar"
+    'sw.updateReady': "Nueva versión lista - recarga para actualizar",
+    'shell.closeConfirmTitle': 'Cerrar pestaña',
+    'shell.closeConfirm': 'Esta pestaña tiene cambios sin guardar que pueden perderse. ¿Cerrar de todos modos?'
   };
 })();
-

@@ -125,7 +125,7 @@ function createVditorTabRenderer(options) {
       var doc = parameters.params && parameters.params.doc ? parameters.params.doc : null;
       var iframe = document.createElement('iframe');
       iframe.className = 'md-tab-view__iframe';
-      var src = new URL('vditor-shell.html', document.baseURI);
+      var src = new URL('vditor-shell', document.baseURI);
       src.searchParams.set('tabId', id);
       src.searchParams.set('lang', mdI18n.lang);
       src.searchParams.set('theme', theme);
@@ -219,14 +219,7 @@ function handleChange(entry, data) {
   entry.doc.updatedAt = typeof data.updatedAt === 'number' ? data.updatedAt : Date.now();
   entry.dirty = true;
   setPanelTitle(entry.id, true);
-  window.MDStore.putDoc(entry.doc).then(function () {
-    entry.dirty = false;
-    setPanelTitle(entry.id, false);
-    updateStatusbar();
-  }).catch(function () {
-    entry.dirty = true;
-    setPanelTitle(entry.id, true);
-  });
+  window.MDStore.putDoc(entry.doc).catch(function () {});
   updateStatusbar();
 }
 
@@ -305,16 +298,99 @@ function newTab() {
   createAndOpenEmptyDoc();
 }
 
-function closeActiveTab() {
-  var panel = dockview.api.activePanel;
+function panelFromTab(tabElement) {
+  if (!dockview || !tabElement) return null;
+  var id = tabElement.getAttribute('data-panel-id');
+  return id ? dockview.api.getPanel(id) : null;
+}
+
+function doClosePanel(panel) {
   if (!panel) return;
   var entry = tabs.get(panel.id);
-  if (entry && entry.doc) {
+  if (entry && entry.doc && entry.doc.markdown) {
     entry.doc.updatedAt = Date.now();
     window.MDStore.putDoc(entry.doc).catch(function () {});
   }
   panel.api.close();
 }
+
+function closePanel(panel) {
+  if (!panel) return;
+  var entry = tabs.get(panel.id);
+  if (entry && entry.dirty && window.MDModal) {
+    window.MDModal.confirm({
+      title: mdI18n.t('shell.closeConfirmTitle'),
+      message: mdI18n.t('shell.closeConfirm'),
+      confirmLabel: mdI18n.t('dialog.confirm'),
+      cancelLabel: mdI18n.t('dialog.cancel'),
+      danger: true
+    }).then(function (ok) {
+      if (ok) doClosePanel(panel);
+    });
+  } else {
+    doClosePanel(panel);
+  }
+}
+
+function closeActiveTab() {
+  var panel = dockview.api.activePanel;
+  if (!panel) return;
+  closePanel(panel);
+}
+
+function tagTabElements() {
+  if (!dockview || !dockview.api) return;
+  try {
+    var seen = {};
+    dockview.api.panels.forEach(function (p) {
+      var g = p.api && p.api.group;
+      if (!g || !g.element) return;
+      if (seen[g.element]) return;
+      seen[g.element] = true;
+      var tabsEl = g.element.querySelector('.dv-tabs-container') || g.element.querySelector('.dv-tabs');
+      if (!tabsEl) return;
+      var tabEls = Array.prototype.filter.call(tabsEl.querySelectorAll('.dv-tab'), function (el) {
+        return el.parentElement === tabsEl;
+      });
+      var groupPanels = g.panels || [];
+      tabEls.forEach(function (tabEl, i) {
+        var pid = groupPanels[i] && groupPanels[i].id;
+        if (pid) tabEl.setAttribute('data-panel-id', pid);
+      });
+    });
+  } catch (err) {}
+}
+
+function ensureAddButtons() {
+  var label = mdI18n ? mdI18n.t('shell.newTab') : '+';
+  Array.prototype.forEach.call(document.querySelectorAll('.dv-tabs-container, .dv-tabs'), function (tabsEl) {
+    if (tabsEl.querySelector('.md-tab-add')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'md-tab-add';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.textContent = '+';
+    btn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      event.preventDefault();
+      newTab();
+    });
+    tabsEl.appendChild(btn);
+  });
+}
+
+function tagAndChrome() {
+  tagTabElements();
+  ensureAddButtons();
+}
+
+window.__mdShellTest = {
+  tagAndChrome: tagAndChrome,
+  tagTabElements: tagTabElements,
+  panelFromTab: panelFromTab,
+  getDockview: function () { return dockview; }
+};
 
 function nextTab() {
   var api = dockview.api;
@@ -798,6 +874,37 @@ function bindSwUpdate() {
   });
 }
 
+var shellObserverTimer = null;
+
+function bindTabInteractions() {
+  document.addEventListener('auxclick', function (event) {
+    if (event.button !== 1) return;
+    var tab = event.target && event.target.closest ? event.target.closest('.dv-tab') : null;
+    if (!tab) return;
+    event.preventDefault();
+    var panel = panelFromTab(tab);
+    if (panel) closePanel(panel);
+  }, true);
+
+  document.addEventListener('click', function (event) {
+    var action = event.target && event.target.closest ? event.target.closest('.dv-default-tab-action') : null;
+    if (!action) return;
+    var tab = action.closest('.dv-tab');
+    var panel = panelFromTab(tab);
+    if (!panel) return;
+    event.preventDefault();
+    event.stopPropagation();
+    closePanel(panel);
+  }, true);
+
+  var shellObserver = new MutationObserver(function () {
+    clearTimeout(shellObserverTimer);
+    shellObserverTimer = setTimeout(tagAndChrome, 100);
+  });
+  shellObserver.observe(el('dockview-container'), { childList: true, subtree: true });
+  tagAndChrome();
+}
+
 function boot() {
   initDockview();
 
@@ -826,6 +933,7 @@ function boot() {
   bindShortcuts();
   bindSystemTheme();
   bindSwUpdate();
+  bindTabInteractions();
   applyShellTheme(theme);
   mdI18n.applyI18n();
 }

@@ -170,7 +170,8 @@
     'overlay.s.closeTab': "إغلاق التبويب الحالي (Ctrl+W)",
     'overlay.s.nextTab': "الانتقال إلى التبويب التالي (Ctrl+Tab)",
     'overlay.s.palette': "فتح لوحة الأوامر (Ctrl+K)",
-    'sw.updateReady': "نسخة جديدة جاهزة - حدّث الصفحة للتحديث"
+    'sw.updateReady': "نسخة جديدة جاهزة - حدّث الصفحة للتحديث",
+    'shell.closeConfirmTitle': 'إغلاق التبويب',
+    'shell.closeConfirm': 'يحتوي هذا التبويب على تغييرات غير محفوظة قد تُفقد. هل تريد الإغلاق؟'
   };
 })();
-

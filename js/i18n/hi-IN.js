@@ -170,7 +170,8 @@
     'overlay.s.closeTab': "वर्तमान टैब बंद करें (Ctrl+W)",
     'overlay.s.nextTab': "अगले टैब पर जाएँ (Ctrl+Tab)",
     'overlay.s.palette': "कमांड पैलेट खोलें (Ctrl+K)",
-    'sw.updateReady': "नया संस्करण तैयार है - अपडेट करने के लिए रीफ़्रेश करें"
+    'sw.updateReady': "नया संस्करण तैयार है - अपडेट करने के लिए रीफ़्रेश करें",
+    'shell.closeConfirmTitle': 'टैब बंद करें',
+    'shell.closeConfirm': 'इस टैब में असहेज किए गए बदलाव हैं जो खो सकते हैं। फिर भी बंद करें?'
   };
 })();
-

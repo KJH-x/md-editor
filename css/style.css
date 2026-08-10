@@ -1054,9 +1054,7 @@ body:has(.vditor--fullscreen) #statusbar {
 @media (max-width: 1150px) {
   .vditor-toolbar {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    flex-wrap: wrap;
   }
 
   .vditor-toolbar__item {
@@ -1087,9 +1085,7 @@ body:has(.vditor--fullscreen) #statusbar {
   .vditor-toolbar {
     padding: 0 4px !important;
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    flex-wrap: wrap;
   }
 
   .vditor-toolbar__item {
@@ -1399,9 +1395,7 @@ body:has(.vditor--fullscreen) #statusbar {
 @media (max-width: 1150px) {
   .vditor-toolbar {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    flex-wrap: wrap;
   }
 
   .vditor-toolbar__item {
@@ -1432,9 +1426,7 @@ body:has(.vditor--fullscreen) #statusbar {
   .vditor-toolbar {
     padding: 0 4px !important;
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    flex-wrap: wrap;
   }
 
   .vditor-toolbar__item {
@@ -1639,3 +1631,75 @@ body.shell #statusbar {
   max-width: min(640px, calc(100vw - 220px));
 }
 
+/* ---- Slash/hint menu scrolling ---- */
+
+.vditor-hint {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ---- Toolbar tooltips below the button ---- */
+
+.vditor-toolbar .vditor-tooltipped::after {
+  top: 100% !important;
+  right: 50% !important;
+  bottom: auto !important;
+  left: auto !important;
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  transform: translateX(50%) !important;
+}
+
+.vditor-toolbar .vditor-tooltipped::before {
+  top: auto !important;
+  right: 50% !important;
+  bottom: -5px !important;
+  left: auto !important;
+  margin-right: -5px !important;
+  margin-top: 0 !important;
+  border-top-color: transparent !important;
+  border-bottom-color: #3b3e43 !important;
+}
+
+/* ---- Dockview tab polish ---- */
+
+.dv-default-tab-content {
+  margin: 0 5px;
+  white-space: nowrap;
+}
+
+.dv-default-tab {
+  border-radius: 6px 6px 0 0;
+  transition: background-color 0.15s ease;
+}
+
+.dv-tabs {
+  align-items: center;
+}
+
+.md-tab-add {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  margin: 0 4px 0 2px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-muted);
+  font: 16px/1 var(--md-font);
+  cursor: pointer;
+  align-self: center;
+}
+
+.md-tab-add:hover {
+  background: var(--md-icon-hover-bg);
+  color: var(--md-icon-hover);
+}
+
+.md-tab-add:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: -2px;
+}

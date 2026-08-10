@@ -120,7 +120,7 @@ SHELL_JS_REQUIRED_PATTERNS = {
     "Dockview instantiation": r"new\s+DockviewComponent",
     "addPanel API": r"\.addPanel\(",
     "component name": r"'vditor-tab'",
-    "iframe host": r"vditor-shell\.html",
+    "iframe host": r"vditor-shell",
     "sandbox flags": r"allow-scripts allow-same-origin",
     "postMessage router": r"postMessage",
     "message origin check": r"event\.origin\s*!==\s*window\.location\.origin",
@@ -356,7 +356,10 @@ def validate():
                 errors.append("SW: precache list is empty")
             for p in paths:
                 rel = p.lstrip("/")
-                if (ROOT / rel).exists():
+                found = (ROOT / rel).exists()
+                if not found and "." not in rel.rsplit("/", 1)[-1]:
+                    found = (ROOT / (rel + ".html")).exists()
+                if found:
                     print(f"  {green(chr(0x2713))} precache: {p}")
                 else:
                     print(f"  {red(chr(0x2717))} precache: {p} MISSING")
@@ -587,6 +590,15 @@ def serve(port=8080):
     class QuietHandler(handler):
         def log_message(self, format, *args):
             print(f"  [{self.log_date_time_string()}] {args[0]}")
+
+        def do_GET(self):
+            path = self.path.split('?', 1)[0].split('#', 1)[0]
+            last = path.rsplit('/', 1)[-1]
+            if '.' not in last:
+                candidate = path.lstrip('/') + '.html'
+                if (ROOT / candidate).is_file():
+                    self.path = '/' + candidate
+            super().do_GET()
 
     class ReusableTCPServer(socketserver.TCPServer):
         allow_reuse_address = True
