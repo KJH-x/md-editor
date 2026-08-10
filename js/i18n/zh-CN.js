@@ -84,6 +84,12 @@
     'overlay.s.ir': '切换 IR 即时渲染模式',
     'overlay.s.sv': '切换 SV 分屏预览模式',
     'overlay.s.togglePanel': '显示 / 隐藏本快捷键面板',
-    'overlay.s.closePanel': '关闭本快捷键面板'
+    'overlay.s.closePanel': '关闭本快捷键面板',
+    'action.mode.wysiwyg': '切换到 WYSIWYG 模式',
+    'action.mode.ir': '切换到 IR 即时渲染模式',
+    'action.mode.sv': '切换到 SV 分屏预览模式',
+    'action.theme.cycle': '循环切换主题（浅色 / 深色 / 跟随系统）',
+    'action.lang.switch': '切换语言',
+    'action.findReplace': '查找与替换'
   };
 })();

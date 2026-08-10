@@ -84,6 +84,12 @@
     'overlay.s.ir': 'Switch to IR instant rendering mode',
     'overlay.s.sv': 'Switch to SV split preview mode',
     'overlay.s.togglePanel': 'Show / hide this shortcut panel',
-    'overlay.s.closePanel': 'Close this shortcut panel'
+    'overlay.s.closePanel': 'Close this shortcut panel',
+    'action.mode.wysiwyg': 'Switch to WYSIWYG mode',
+    'action.mode.ir': 'Switch to IR instant rendering mode',
+    'action.mode.sv': 'Switch to SV split preview mode',
+    'action.theme.cycle': 'Cycle theme (light / dark / system)',
+    'action.lang.switch': 'Switch language',
+    'action.findReplace': 'Find and replace'
   };
 })();
