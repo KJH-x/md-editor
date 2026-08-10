@@ -2,7 +2,7 @@
   'use strict';
 
   var STORAGE_KEY = 'md-lang';
-  var SUPPORTED = { 'zh-CN': true, 'en-US': true };
+  var SUPPORTED = { 'zh-CN': true, 'en-US': true, 'es-ES': true, 'hi-IN': true, 'ar-AR': true };
   var dicts = {};
 
   function mergeDicts() {
@@ -49,6 +49,10 @@
     }
   }
 
+  function isRTL(next) {
+    return (next || lang) === 'ar-AR';
+  }
+
   function setLang(next) {
     if (!SUPPORTED[next]) next = defaultLang();
     lang = next;
@@ -70,7 +74,8 @@
     dicts: dicts,
     setLang: setLang,
     t: t,
-    applyI18n: applyI18n
+    applyI18n: applyI18n,
+    isRTL: isRTL
   };
   Object.defineProperty(mdI18n, 'lang', {
     get: function () { return lang; }
