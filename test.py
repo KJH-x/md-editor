@@ -208,6 +208,28 @@ def validate():
             print(f"  {red(chr(0x2717))} JavaScript syntax")
             errors.append(node.stderr.strip() or "JavaScript syntax check failed")
 
+    # ---- 6. i18n dictionaries ----
+    print(f"\n{'[6] i18n dictionaries':<30}")
+    i18n_codes = ["zh-CN", "en-US", "es-ES", "hi-IN", "ar-AR"]
+    for code in i18n_codes:
+        p = ROOT / f"js/i18n/{code}.js"
+        if p.exists():
+            print(f"  {green(chr(0x2713))} js/i18n/{code}.js")
+        else:
+            print(f"  {red(chr(0x2717))} js/i18n/{code}.js MISSING")
+            errors.append(f"Missing i18n dict: {code}.js")
+    idx_path = ROOT / "js/i18n/index.js"
+    if idx_path.exists():
+        idx = idx_path.read_text(encoding="utf-8")
+        for code in ["es-ES", "hi-IN", "ar-AR"]:
+            if f"'{code}'" in idx:
+                print(f"  {green(chr(0x2713))} index.js registers {code}")
+            else:
+                print(f"  {red(chr(0x2717))} index.js missing {code}")
+                errors.append(f"i18n: index.js missing {code}")
+    else:
+        errors.append("js/i18n/index.js not found")
+
     # ---- Summary ----
     print(f"\n{'=' * 56}")
     if errors:
