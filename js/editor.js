@@ -3,9 +3,11 @@
 
   var DEBUG = new URLSearchParams(window.location.search).has('debug');
   var DB_NAME = 'md-editor';
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
   var DRAFT_STORE = 'drafts';
   var DRAFT_ID = 'current';
+  var FSA_STORE = 'fsa';
+  var FSA_ID = 'current';
   var SAVE_DELAY = 350;
   var MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   var MAX_DATA_URL_LENGTH = 3 * 1024 * 1024;
@@ -270,6 +272,9 @@
         if (!database.objectStoreNames.contains(DRAFT_STORE)) {
           database.createObjectStore(DRAFT_STORE, { keyPath: 'id' });
         }
+        if (!database.objectStoreNames.contains(FSA_STORE)) {
+          database.createObjectStore(FSA_STORE, { keyPath: 'id' });
+        }
       };
       request.onsuccess = function () {
         var database = request.result;
@@ -459,6 +464,23 @@
   }
 
   function continueOpen() {
+    if (window.MDFsa && window.MDFsa.supported()) {
+      window.MDFsa.openFile().then(function (result) {
+        if (!result) return;
+        if (result.encoding !== 'utf-8') {
+          setSaveStatus(mdI18n.t('file.openedWith')
+            .replace('{encoding}', result.encoding.toUpperCase()), false, 'idle');
+        }
+        vditor.setValue(result.text, true);
+        scheduleDraftSave(result.text);
+        log('open', 'Loaded: ' + (result.handle ? result.handle.name : 'file') + ' (' + result.encoding + ')');
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        setSaveStatus(mdI18n.t('file.readError').replace('{name}', 'file'), true);
+        log('open', 'File read failed', err);
+      });
+      return;
+    }
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.md,.markdown,.txt';
@@ -498,8 +520,7 @@
     });
   }
 
-  function saveFile(force) {
-    var content = vditor.getValue();
+  function downloadMarkdown(content, force) {
     var match = content.match(/^#\s+(.+)$/m);
     var baseName = match ? match[1].trim() : mdI18n.t('untitled');
     var filename = mdFileIO.sanitizeFilename(baseName) + '.md';
@@ -514,7 +535,44 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     if (force) saveDraftNow(content);
     log('save', 'Downloaded: ' + filename);
-}
+  }
+
+  function saveFile(force) {
+    var content = vditor.getValue();
+    if (window.MDFsa && window.MDFsa.supported()) {
+      window.MDFsa.getHandle().then(function (handle) {
+        if (handle || force) {
+          return window.MDFsa.saveFile(content, force).then(function (status) {
+            if (status === 'saved') {
+              setSaveStatus(mdI18n.t('fsa.savedFile'), false, 'saved');
+              if (force) saveDraftNow(content);
+              return;
+            }
+            if (status === 'needsGesture') {
+              setSaveStatus(mdI18n.t('fsa.needsGesture'), true, 'error');
+              if (force) saveDraftNow(content);
+              return;
+            }
+            if (status === 'unsupported') {
+              setSaveStatus(mdI18n.t('fsa.unsupported'), true, 'error');
+            }
+            downloadMarkdown(content, force);
+          }).catch(function (err) {
+            if (err && err.name === 'AbortError') {
+              if (force) saveDraftNow(content);
+              return;
+            }
+            downloadMarkdown(content, force);
+          });
+        }
+        downloadMarkdown(content, force);
+      }).catch(function () {
+        downloadMarkdown(content, force);
+      });
+      return;
+    }
+    downloadMarkdown(content, force);
+  }
 
   function transformCallouts(html) {
     return html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function (blockquote, inner) {
@@ -1001,6 +1059,13 @@
       after: function () {
         editorReady = true;
         patchHintRender();
+        if (window.MDFsa && typeof window.MDFsa.getHandle === 'function') {
+          window.MDFsa.getHandle().then(function (handle) {
+            if (handle) log('fsa', 'Reconnected file handle');
+          }).catch(function () {
+            log('fsa', 'Handle reconnect failed');
+          });
+        }
         if (pendingRestoreValue !== null) {
           vditor.setValue(pendingRestoreValue, true);
           pendingRestoreValue = null;
