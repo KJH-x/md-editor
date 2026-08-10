@@ -12,6 +12,23 @@
 
   var saveStatus = document.getElementById('saveStatus');
   var saveStatusTimer = null;
+  var saveState = 'idle';
+  var saveStateMessage = '';
+  var statusbarEl = document.getElementById('statusbar');
+  var statusbarSave = document.getElementById('statusbar-save');
+  var statusbarSaveDot = statusbarSave ? statusbarSave.querySelector('.statusbar__dot') : null;
+  var statusbarSaveText = statusbarSave ? statusbarSave.querySelector('.statusbar__save-text') : null;
+  var statusbarCounts = document.getElementById('statusbar-counts');
+  var statusbarReading = document.getElementById('statusbar-reading');
+  var statusbarMode = document.getElementById('statusbar-mode');
+  var statusbarLang = document.getElementById('statusbar-lang');
+  var statusRenderTimer = null;
+  var MODE_LABELS = { wysiwyg: 'WYSIWYG', ir: 'IR', sv: 'SV' };
+  var LANG_LABELS = {
+    zh_CN: '中文', zh_TW: '繁體中文', en_US: 'English', ja_JP: '日本語',
+    de_DE: 'Deutsch', es_ES: 'Español', fr_FR: 'Français', ko_KR: '한국어',
+    pt_BR: 'Português', ru_RU: 'Русский', vi_VN: 'Tiếng Việt'
+  };
   var databasePromise = null;
   var saveTimer = null;
   var pageWidth = safeStorageGet('md-pagewidth') || '';
@@ -53,18 +70,101 @@
     console.log.apply(console, args);
   }
 
-  function setSaveStatus(message, isError) {
+  function setSaveStatus(message, isError, state) {
     if (!saveStatus) return;
     clearTimeout(saveStatusTimer);
     saveStatus.textContent = message;
     saveStatus.classList.toggle('is-error', !!isError);
     saveStatus.classList.toggle('is-saving', !isError && /^正在/.test(message || ''));
-    if (!isError && message) {
-      saveStatusTimer = setTimeout(function () {
-        saveStatus.textContent = '';
-        saveStatus.classList.remove('is-error', 'is-saving');
-      }, 2400);
+    saveStateMessage = message || '';
+    if (state === 'saving' || state === 'saved' || state === 'error' || state === 'idle') {
+      saveState = state;
+    } else if (isError) {
+      saveState = 'error';
+    } else if (!message) {
+      saveState = 'idle';
+    } else if (/^正在/.test(message)) {
+      saveState = 'saving';
+    } else {
+      saveState = 'saved';
     }
+    renderStatusBar();
+    if (!isError && message) {
+      saveStatusTimer = setTimeout(clearSaveStatus, 2400);
+    }
+  }
+
+  function clearSaveStatus() {
+    if (!saveStatus) return;
+    saveStatus.textContent = '';
+    saveStatus.classList.remove('is-error', 'is-saving');
+    saveState = 'idle';
+    saveStateMessage = '';
+    renderStatusBar();
+  }
+
+  function setTextContent(el, value) {
+    if (el && el.textContent !== value) el.textContent = value;
+  }
+
+  function computeStats(value) {
+    var words = (value.match(/[A-Za-z0-9]+|[\u4e00-\u9fff]/g) || []).length;
+    return { chars: value.length, words: words, reading: Math.ceil(words / 200) };
+  }
+
+  function renderSave() {
+    if (!statusbarSave) return;
+    var label = saveStateMessage;
+    if (!label) {
+      if (saveState === 'saving') label = '正在保存';
+      else if (saveState === 'saved') label = '已保存';
+      else if (saveState === 'error') label = '保存出错';
+    }
+    statusbarSave.setAttribute('data-state', saveState);
+    if (statusbarSaveDot) statusbarSaveDot.className = 'statusbar__dot statusbar__dot--' + saveState;
+    setTextContent(statusbarSaveText, label);
+    statusbarSave.classList.toggle('statusbar__save--empty', saveState === 'idle' && !label);
+  }
+
+  function renderCounts() {
+    if (!editorReady || !vditor || !statusbarCounts) return;
+    var stats = computeStats(vditor.getValue());
+    setTextContent(statusbarCounts, '字数 ' + stats.chars + ' · 词数 ' + stats.words);
+    setTextContent(statusbarReading, '约 ' + stats.reading + ' 分钟');
+  }
+
+  function renderModeLang() {
+    if (!vditor) return;
+    var mode = vditor.getCurrentMode();
+    var lang = vditor.vditor && vditor.vditor.options && vditor.vditor.options.lang;
+    setTextContent(statusbarMode, MODE_LABELS[mode] || mode || '');
+    setTextContent(statusbarLang, LANG_LABELS[lang] || lang || '');
+  }
+
+  function isFullscreen() {
+    var root = document.querySelector('.vditor');
+    return !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+      !!(root && root.classList.contains('vditor--fullscreen'));
+  }
+
+  function updateStatusVisibility() {
+    if (!statusbarEl) return;
+    statusbarEl.classList.toggle('is-fullscreen', isFullscreen());
+  }
+
+  function renderStatusBar() {
+    renderSave();
+    renderModeLang();
+    renderCounts();
+    updateStatusVisibility();
+  }
+
+  function scheduleStatusRender() {
+    if (statusRenderTimer) return;
+    statusRenderTimer = setTimeout(function () {
+      statusRenderTimer = null;
+      renderStatusBar();
+    }, 500);
   }
 
   function safeStorageGet(key) {
@@ -81,7 +181,7 @@
       window.localStorage.setItem(key, value);
       return true;
     } catch (err) {
-      setSaveStatus('设置无法保存到浏览器', true);
+      setSaveStatus('设置无法保存到浏览器', true, 'error');
       log('storage', 'localStorage write failed', err);
       return false;
     }
@@ -239,7 +339,7 @@
 
   function failSave(markdown, err) {
     safeStorageSet('md-editor-fallback', markdown);
-    setSaveStatus('草稿保存失败，请立即下载备份', true);
+    setSaveStatus('草稿保存失败，请立即下载备份', true, 'error');
     log('storage', 'Draft save failed', err);
     return false;
   }
@@ -250,7 +350,7 @@
     return writeDraft(markdown).then(function () {
       retrying = false;
       safeStorageRemove('md-editor-fallback');
-      setSaveStatus('草稿已保存', false);
+      setSaveStatus('草稿已保存', false, 'saved');
       log('storage', 'Draft saved', { length: markdown.length });
       notifyDraftSaved();
       return true;
@@ -278,7 +378,7 @@
 
   function scheduleDraftSave(markdown) {
     clearTimeout(saveTimer);
-    setSaveStatus('正在保存...', false);
+    setSaveStatus('正在保存...', false, 'saving');
     saveTimer = setTimeout(function () { saveDraftNow(markdown); }, SAVE_DELAY);
   }
 
@@ -321,7 +421,7 @@
       file.arrayBuffer().then(function (buffer) {
         var decoded = mdFileIO.decodeFile(buffer);
         if (decoded.encoding !== 'utf-8') {
-          setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开');
+          setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开', false, 'idle');
         }
         vditor.setValue(decoded.text, true);
         scheduleDraftSave(decoded.text);
@@ -473,7 +573,7 @@
       }
       if (failed.length) {
         var message = failed.join('；');
-        setSaveStatus(message, true);
+        setSaveStatus(message, true, 'error');
         log('upload', 'Image insertion partial failure', failed);
         return message;
       }
@@ -505,7 +605,7 @@
   ].join('\n');
 
   var draftPromise = readDraft().catch(function (err) {
-    setSaveStatus('本地草稿不可用，请使用下载保存', true);
+    setSaveStatus('本地草稿不可用，请使用下载保存', true, 'error');
     log('storage', 'Draft read failed', err);
     return null;
   });
@@ -589,6 +689,7 @@
       userEdited = true;
       scheduleDraftSave(value);
       updateEmptyState();
+      scheduleStatusRender();
     },
     ctrlEnter: function () {
       saveDraftNow(vditor.getValue());
@@ -596,6 +697,19 @@
     after: function () {
       editorReady = true;
       updateEmptyState();
+      renderStatusBar();
+      var chromeObserver = new MutationObserver(function () {
+        renderModeLang();
+        updateStatusVisibility();
+      });
+      chromeObserver.observe(document.getElementById('vditor'), {
+        attributes: true,
+        attributeFilter: ['class'],
+        childList: true,
+        subtree: true
+      });
+      document.addEventListener('fullscreenchange', updateStatusVisibility);
+      document.addEventListener('webkitfullscreenchange', updateStatusVisibility);
       applyTheme(theme);
       if (DEBUG) {
         window.__mdEditorTest = {

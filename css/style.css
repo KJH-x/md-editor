@@ -494,6 +494,82 @@ body {
   outline-offset: 2px;
 }
 
+/* ---- Status bar ---- */
+
+#statusbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 8px;
+  height: 26px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  max-width: min(560px, calc(100vw - 220px));
+  padding: 0 10px;
+  border: 1px solid var(--md-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, Canvas 82%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--md-muted);
+  font: 11px/1 var(--md-font);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#statusbar.is-fullscreen {
+  display: none;
+}
+
+body:has(.vditor--fullscreen) #statusbar {
+  display: none;
+}
+
+.statusbar__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  color: var(--md-muted);
+}
+
+.statusbar__seg + .statusbar__seg {
+  border-left: 1px solid var(--md-border);
+}
+
+.statusbar__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--md-muted);
+}
+
+.statusbar__dot--saving {
+  background: var(--md-warning);
+  animation: statusbar-pulse 1.2s ease-in-out infinite;
+}
+
+.statusbar__dot--saved {
+  background: var(--md-success);
+}
+
+.statusbar__dot--error {
+  background: var(--md-danger);
+}
+
+.statusbar__save--empty {
+  display: none;
+}
+
+@keyframes statusbar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+}
+
 /* ---- Firefox scrollbars ---- */
 
 @supports (scrollbar-width: thin) {
@@ -546,6 +622,15 @@ body {
   .save-status {
     max-width: calc(100vw - 28px);
     font-size: 11px;
+  }
+
+  #statusbar {
+    max-width: calc(100vw - 36px);
+    font-size: 10px;
+  }
+
+  .statusbar__hint {
+    display: none;
   }
 
   .vditor-toolbar {
