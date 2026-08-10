@@ -152,6 +152,9 @@
     'find.replaceAll': "Replace All",
     'find.case': "Case sensitive",
     'find.next': "Next",
-    'find.prev': "Previous"
+    'find.prev': "Previous",
+    'a11y.upload': 'Upload image',
+    'a11y.editorLabel': 'Editor content area',
+    'a11y.hintMenu': 'Editor commands'
   };
 })();

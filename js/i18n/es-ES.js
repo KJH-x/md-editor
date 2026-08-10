@@ -152,6 +152,10 @@
     'fsa.savedFile': "Guardado en el archivo",
     'fsa.reconnect': "Archivo reconectado",
     'fsa.needsGesture': "Acción del usuario requerida para guardar",
-    'fsa.unsupported': "Guardado en archivo no compatible; se descargó"
+    'fsa.unsupported': "Guardado en archivo no compatible; se descargó",
+    'a11y.upload': "Subir imagen",
+    'a11y.editorLabel': "Editor",
+    'a11y.hintMenu': "Menú de inserción"
   };
 })();
+

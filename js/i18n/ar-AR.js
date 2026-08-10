@@ -152,6 +152,10 @@
     'fsa.savedFile': "تم الحفظ في الملف",
     'fsa.reconnect': "إعادة الاتصال بالملف",
     'fsa.needsGesture': "يلزم إجراء مستخدم للحفظ",
-    'fsa.unsupported': "الحفظ في الملف غير مدعوم؛ تم التنزيل"
+    'fsa.unsupported': "الحفظ في الملف غير مدعوم؛ تم التنزيل",
+    'a11y.upload': "رفع صورة",
+    'a11y.editorLabel': "محرر",
+    'a11y.hintMenu': "قائمة الإدراج"
   };
 })();
+

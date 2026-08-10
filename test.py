@@ -73,6 +73,8 @@ JS_REQUIRED_PATTERNS = {
     "export toolbar button": r"name:\s*'export2'",
     "custom vditor i18n object": r"mdVditorI18n",
     "RTL detection": r"isRTL",
+    "accessibility keys (a11y)": r"a11y",
+    "aria-label usage": r"aria-label",
 }
 
 CSS_REQUIRED_PATTERNS = {

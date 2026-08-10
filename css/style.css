@@ -485,9 +485,15 @@ body {
 }
 
 .save-status.is-saving {
-  color: #9a6b00;
-  border-color: rgba(154, 107, 0, 0.35);
-  background: color-mix(in srgb, #9a6b00 10%, Canvas);
+  color: #7a4f00;
+  border-color: rgba(122, 79, 0, 0.35);
+  background: color-mix(in srgb, #7a4f00 10%, Canvas);
+}
+
+:root[data-theme="dark"] .save-status.is-saving {
+  color: #e3b341;
+  border-color: rgba(227, 179, 65, 0.35);
+  background: color-mix(in srgb, #e3b341 10%, Canvas);
 }
 
 .save-status.is-saved {
@@ -495,9 +501,15 @@ body {
 }
 
 .save-status.is-error {
-  color: #d1242f;
-  border-color: rgba(209, 36, 47, 0.35);
-  background: color-mix(in srgb, #d1242f 10%, Canvas);
+  color: #c22a1f;
+  border-color: rgba(194, 42, 31, 0.35);
+  background: color-mix(in srgb, #c22a1f 10%, Canvas);
+}
+
+:root[data-theme="dark"] .save-status.is-error {
+  color: #ff7b72;
+  border-color: rgba(255, 123, 114, 0.35);
+  background: color-mix(in srgb, #ff7b72 10%, Canvas);
 }
 
 /* ---- Shortcut overlay ---- */
@@ -1485,3 +1497,19 @@ body:has(.vditor--fullscreen) #statusbar {
     padding: 0 !important;
   }
 }
+
+/* ---- Accessibility: focus-visible rings ---- */
+
+.vditor-hint button:focus-visible,
+.vditor-emojis button:focus-visible,
+.vditor-panel button:focus-visible,
+.vditor-preview__action button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: -2px;
+}
+
+.vditor-outline li > span:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: -2px;
+}
+
