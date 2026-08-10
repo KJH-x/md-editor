@@ -360,16 +360,18 @@
           input.addEventListener('change', function () {
             if (!input.files[0]) return;
             var file = input.files[0];
-            var reader = new FileReader();
-            reader.onload = function (event) {
-              vditor.setValue(event.target.result, true);
-              scheduleDraftSave(event.target.result);
-              log('open', 'Loaded: ' + file.name);
-            };
-            reader.onerror = function () {
+            file.arrayBuffer().then(function (buffer) {
+              var decoded = mdFileIO.decodeFile(buffer);
+              if (decoded.encoding !== 'utf-8') {
+                setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开');
+              }
+              vditor.setValue(decoded.text, true);
+              scheduleDraftSave(decoded.text);
+              log('open', 'Loaded: ' + file.name + ' (' + decoded.encoding + ')');
+            }).catch(function (err) {
               setSaveStatus('文件读取失败：' + file.name, true);
-            };
-            reader.readAsText(file, 'UTF-8');
+              log('open', 'File read failed', err);
+            });
           });
           input.click();
         }
@@ -382,7 +384,7 @@
           var content = vditor.getValue();
           var match = content.match(/^#\s+(.+)$/m);
           var baseName = match ? match[1].trim() : 'untitled';
-          var filename = baseName.replace(/[<>:"/\\|?*]/g, '_') + '.md';
+          var filename = mdFileIO.sanitizeFilename(baseName) + '.md';
           var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
           var url = URL.createObjectURL(blob);
           var anchor = document.createElement('a');

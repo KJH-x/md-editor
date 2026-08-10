@@ -22,6 +22,7 @@ REQUIRED_FILES = [
     "index.html",
     "css/style.css",
     "js/editor.js",
+    "js/file-io.js",
     "LICENSE",
     "README.md",
     ".gitignore",
@@ -52,6 +53,8 @@ JS_REQUIRED_PATTERNS = {
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
     "md-pagewidth localStorage": r"md-pagewidth",
+    "file-io sanitize": r"sanitizeFilename",
+    "file-io decode": r"decodeFile",
 }
 
 CSS_REQUIRED_PATTERNS = {
@@ -118,10 +121,14 @@ def validate():
             print(f"  {green(chr(0x2713))} #vditor container found")
 
         if 'file-io.js' in html:
-            print(f"  {yellow('!')} stale reference to file-io.js")
-            warnings.append("HTML: stale file-io.js reference")
+            if (ROOT / "js/file-io.js").exists():
+                print(f"  {green(chr(0x2713))} file-io.js referenced and present")
+            else:
+                print(f"  {red(chr(0x2717))} file-io.js referenced but NOT FOUND")
+                errors.append("Reference not found: js/file-io.js")
         else:
-            print(f"  {green(chr(0x2713))} No stale file-io.js ref")
+            print(f"  {yellow('!')} file-io.js reference missing")
+            warnings.append("HTML: file-io.js reference missing")
     else:
         errors.append("index.html not found")
 
