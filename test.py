@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "js/editor.js",
     "js/file-io.js",
     "js/fsa.js",
+    "js/tab-store.js",
     "js/actions.js",
     "js/ui/find-replace.js",
     "LICENSE",
@@ -48,7 +49,6 @@ JS_REQUIRED_PATTERNS = {
     "resize handler": r"addEventListener\('resize'",
     "MutationObserver": r"MutationObserver",
     "ready callback": r"after:\s*function",
-    "IndexedDB draft storage": r"indexedDB\.open",
     "explicit Markdown sanitizer": r"sanitize:\s*true",
     "pinned local Vditor assets": r"vendor/vditor",
     "contentAreas fn": r"function\s+contentAreas\b",
@@ -88,6 +88,22 @@ FSA_REQUIRED_PATTERNS = {
     "FSA open picker": r"showOpenFilePicker",
     "FSA save picker": r"showSaveFilePicker",
     "FSA writable": r"createWritable",
+}
+
+TAB_STORE_REQUIRED_PATTERNS = {
+    "MDStore global": r"window\.MDStore",
+    "listDocs API": r"\blistDocs\b",
+    "getDoc API": r"\bgetDoc\b",
+    "putDoc API": r"\bputDoc\b",
+    "deleteDoc API": r"\bdeleteDoc\b",
+    "snapshot API": r"\bsnapshot\b",
+    "exportJSON API": r"\bexportJSON\b",
+    "importJSON API": r"\bimportJSON\b",
+    "migrateLegacy API": r"\bmigrateLegacy\b",
+    "navigator locks wrap": r"navigator\.locks\.request",
+    "IndexedDB open": r"indexedDB\.open",
+    "IIFE wrapper": r"\(function\s*\(\)",
+    "use strict": r"'use strict'",
 }
 
 def green(s):
@@ -188,8 +204,23 @@ def validate():
         print(f"  {red(chr(0x2717))} js/fsa.js MISSING")
         errors.append("js/fsa.js not found")
 
-    # ---- 5. CSS code validation ----
-    print(f"\n{'[5] CSS structure':<30}")
+    # ---- 5. Tab store module validation ----
+    print(f"\n{'[5] Tab store module':<30}")
+    tab_store_path = ROOT / "js/tab-store.js"
+    if tab_store_path.exists():
+        tab_store = tab_store_path.read_text(encoding="utf-8")
+        for label, pattern in TAB_STORE_REQUIRED_PATTERNS.items():
+            if re.search(pattern, tab_store):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"TabStore: {label}")
+    else:
+        print(f"  {red(chr(0x2717))} js/tab-store.js MISSING")
+        errors.append("js/tab-store.js not found")
+
+    # ---- 6. CSS code validation ----
+    print(f"\n{'[6] CSS structure':<30}")
     css_path = ROOT / "css/style.css"
     if css_path.exists():
         css = css_path.read_text(encoding="utf-8")
@@ -202,8 +233,8 @@ def validate():
     else:
         errors.append("css/style.css not found")
 
-    # ---- 6. DOM structure analysis (static) ----
-    print(f"\n{'[6] Editor initialization check':<30}")
+    # ---- 7. DOM structure analysis (static) ----
+    print(f"\n{'[7] Editor initialization check':<30}")
     if js_path.exists():
         js = js_path.read_text(encoding="utf-8")
 
@@ -244,8 +275,8 @@ def validate():
             print(f"  {red(chr(0x2717))} JavaScript syntax")
             errors.append(node.stderr.strip() or "JavaScript syntax check failed")
 
-    # ---- 7. i18n dictionaries ----
-    print(f"\n{'[7] i18n dictionaries':<30}")
+    # ---- 8. i18n dictionaries ----
+    print(f"\n{'[8] i18n dictionaries':<30}")
     i18n_codes = ["zh-CN", "en-US", "es-ES", "hi-IN", "ar-AR"]
     for code in i18n_codes:
         p = ROOT / f"js/i18n/{code}.js"

@@ -2,12 +2,6 @@
   'use strict';
 
   var DEBUG = new URLSearchParams(window.location.search).has('debug');
-  var DB_NAME = 'md-editor';
-  var DB_VERSION = 2;
-  var DRAFT_STORE = 'drafts';
-  var DRAFT_ID = 'current';
-  var FSA_STORE = 'fsa';
-  var FSA_ID = 'current';
   var SAVE_DELAY = 350;
   var MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   var MAX_DATA_URL_LENGTH = 3 * 1024 * 1024;
@@ -34,7 +28,7 @@
   };
   var LANG_CYCLE = ['zh-CN', 'en-US', 'es-ES', 'hi-IN', 'ar-AR'];
   var VDTOR_LANG = { 'zh-CN': 'zh_CN', 'en-US': 'en_US', 'es-ES': 'es_ES', 'hi-IN': 'hi_IN', 'ar-AR': 'ar_AR' };
-  var databasePromise = null;
+  var activeDocId = null;
   var saveTimer = null;
   var pageWidth = safeStorageGet('md-pagewidth') || '';
   var editorReady = false;
@@ -262,70 +256,49 @@
   document.addEventListener('fullscreenchange', updateStatusVisibility);
   document.addEventListener('webkitfullscreenchange', updateStatusVisibility);
 
-  function openDatabase() {
-    if (!('indexedDB' in window)) {
-      return Promise.reject(new Error(mdI18n.t('storage.unsupported')));
-    }
-    if (databasePromise) return databasePromise;
+  function deriveTitle(markdown) {
+    var match = String(markdown || '').match(/^#\s+(.+)$/m);
+    return match ? match[1].trim() : mdI18n.t('untitled');
+  }
 
-    databasePromise = new Promise(function (resolve, reject) {
-      var request = window.indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = function () {
-        var database = request.result;
-        if (!database.objectStoreNames.contains(DRAFT_STORE)) {
-          database.createObjectStore(DRAFT_STORE, { keyPath: 'id' });
-        }
-        if (!database.objectStoreNames.contains(FSA_STORE)) {
-          database.createObjectStore(FSA_STORE, { keyPath: 'id' });
-        }
-      };
-      request.onsuccess = function () {
-        var database = request.result;
-        database.onclose = function () { databasePromise = null; };
-        database.onversionchange = function () { databasePromise = null; };
-        resolve(database);
-      };
-      request.onerror = function () {
-        databasePromise = null;
-        reject(request.error || new Error(mdI18n.t('storage.openFailed')));
-      };
-      request.onblocked = function () {
-        databasePromise = null;
-        reject(new Error(mdI18n.t('storage.blocked')));
-      };
+  function newDocId() {
+    if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+    return 'doc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  function ensureActiveDoc() {
+    if (ensureActiveDoc.promise) return ensureActiveDoc.promise;
+    ensureActiveDoc.promise = window.MDStore.migrateLegacy().then(function (legacy) {
+      if (legacy && legacy.id) {
+        activeDocId = legacy.id;
+        return legacy;
+      }
+      return window.MDStore.listDocs().then(function (docs) {
+        var doc = docs && docs.length ? docs[0] : null;
+        if (doc) activeDocId = doc.id;
+        return doc;
+      });
     });
-    return databasePromise;
+    ensureActiveDoc.promise.catch(function () {
+      ensureActiveDoc.promise = null;
+    });
+    return ensureActiveDoc.promise;
   }
 
   function readDraft() {
-    return openDatabase().then(function (database) {
-      return new Promise(function (resolve, reject) {
-        var request = database.transaction(DRAFT_STORE, 'readonly')
-          .objectStore(DRAFT_STORE).get(DRAFT_ID);
-        request.onsuccess = function () { resolve(request.result || null); };
-        request.onerror = function () {
-          reject(request.error || new Error(mdI18n.t('storage.readFailed')));
-        };
-      });
+    return ensureActiveDoc().then(function (doc) {
+      return doc ? { markdown: doc.markdown, updatedAt: doc.updatedAt } : null;
     });
   }
 
   function writeDraftImpl(markdown) {
-    return openDatabase().then(function (database) {
-      return new Promise(function (resolve, reject) {
-        var transaction = database.transaction(DRAFT_STORE, 'readwrite');
-        transaction.objectStore(DRAFT_STORE).put({
-          id: DRAFT_ID,
-          markdown: markdown,
-          updatedAt: Date.now()
-        });
-        transaction.oncomplete = function () { resolve(); };
-        transaction.onerror = function () {
-          reject(transaction.error || new Error(mdI18n.t('storage.writeFailed')));
-        };
-        transaction.onabort = function () {
-          reject(transaction.error || new Error(mdI18n.t('storage.writeAborted')));
-        };
+    return ensureActiveDoc().then(function () {
+      if (!activeDocId) activeDocId = newDocId();
+      return window.MDStore.putDoc({
+        id: activeDocId,
+        title: deriveTitle(markdown),
+        markdown: markdown,
+        updatedAt: Date.now()
       });
     });
   }
