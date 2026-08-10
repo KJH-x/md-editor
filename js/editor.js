@@ -415,11 +415,7 @@
     });
   }
 
-  function openFile() {
-    if (vditor.getValue().trim() &&
-        !confirm(mdI18n.t('dialog.openConfirm'))) {
-      return;
-    }
+  function continueOpen() {
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.md,.markdown,.txt';
@@ -441,6 +437,22 @@
       });
     });
     input.click();
+  }
+
+  function openFile() {
+    if (vditor.getValue().trim() === '') {
+      continueOpen();
+      return;
+    }
+    MDModal.confirm({
+      title: mdI18n.t('dialog.openConfirmTitle'),
+      message: mdI18n.t('dialog.openConfirm'),
+      confirmLabel: mdI18n.t('dialog.confirm'),
+      cancelLabel: mdI18n.t('dialog.cancel'),
+      danger: true
+    }).then(function (ok) {
+      if (ok) continueOpen();
+    });
   }
 
   function saveFile(force) {
@@ -826,12 +838,23 @@
           icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h2v14H4V5zm5 0h2v14H9V5zm5 0h2v14h-2V5zm4 0h2v14h-2V5z"/></svg>',
           click: function () {
             var current = safeStorageGet('md-pagewidth') || '';
-            var value = prompt(mdI18n.t('pagewidth.prompt'), current);
-            if (value !== null) {
-              pageWidth = value;
-              safeStorageSet('md-pagewidth', value);
-              applyPageWidth(value);
-            }
+            MDModal.prompt({
+              title: mdI18n.t('pagewidth.title'),
+              label: mdI18n.t('pagewidth.prompt'),
+              value: current,
+              confirmLabel: mdI18n.t('dialog.promptOk'),
+              cancelLabel: mdI18n.t('dialog.cancel'),
+              validate: function (v) {
+                return (v === '' || (/^\d+$/.test(v) && parseInt(v, 10) >= 0))
+                  ? null : mdI18n.t('pagewidth.invalid');
+              }
+            }).then(function (result) {
+              if (result !== null) {
+                pageWidth = result;
+                safeStorageSet('md-pagewidth', result);
+                applyPageWidth(result);
+              }
+            });
           }
         },
         {
