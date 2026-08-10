@@ -373,6 +373,42 @@ body {
   color: var(--md-icon-hover);
 }
 
+.vditor-outline li > span.md-outline-active {
+  position: relative;
+  background-color: var(--md-accent-bg);
+  color: var(--md-accent);
+  font-weight: 600;
+}
+
+.vditor-outline li > span.md-outline-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--md-accent);
+}
+
+.vditor-outline li > ul {
+  margin-left: 6px;
+}
+
+.vditor-outline li > ul > li > span {
+  color: var(--md-muted);
+  font-size: 12px;
+  padding-left: 14px;
+}
+
+.vditor-outline li > ul > li > span:hover {
+  color: var(--md-icon-hover);
+}
+
+.vditor-outline li > ul > li > span.md-outline-active {
+  color: var(--md-accent);
+}
+
 /* ---- Scrollbars ---- */
 
 .vditor-content ::-webkit-scrollbar,

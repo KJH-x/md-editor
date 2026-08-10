@@ -399,6 +399,49 @@
     return areas;
   }
 
+  var outlineSpyTimer = null;
+  var OUTLINE_SPY_DELAY = 100;
+
+  function outlineSpyContainers() {
+    var containers = [];
+    var content = document.querySelector('.vditor-content');
+    var preview = document.querySelector('.vditor-preview');
+    if (content) containers.push(content);
+    if (preview) containers.push(preview);
+    var wrappers = document.querySelectorAll('.vditor-ir .vditor-reset, .vditor-wysiwyg .vditor-reset, .vditor-sv');
+    for (var i = 0; i < wrappers.length; i++) containers.push(wrappers[i]);
+    return containers;
+  }
+
+  function scheduleOutlineSpy() {
+    clearTimeout(outlineSpyTimer);
+    outlineSpyTimer = setTimeout(updateOutlineSpy, OUTLINE_SPY_DELAY);
+  }
+
+  function updateOutlineSpy() {
+    outlineSpyTimer = null;
+    var outlineEl = document.querySelector('.vditor-outline');
+    if (!outlineEl || outlineEl.offsetParent === null) return;
+    var items = outlineEl.querySelectorAll('li > span[data-target-id]');
+    if (!items.length) return;
+    var editor = vditor && vditor.vditor;
+    var toolbarEl = editor && editor.toolbar && editor.toolbar.element;
+    var toolbarHeight = toolbarEl ? toolbarEl.offsetHeight : 0;
+    var line = toolbarHeight + 24;
+    var active = null;
+    for (var i = 0; i < items.length; i++) {
+      var id = items[i].getAttribute('data-target-id');
+      if (!id) continue;
+      var heading = document.getElementById(id);
+      if (!heading) continue;
+      if (heading.getBoundingClientRect().top > line) continue;
+      active = items[i];
+    }
+    for (var j = 0; j < items.length; j++) {
+      items[j].classList.toggle('md-outline-active', items[j] === active);
+    }
+  }
+
   function applyPageWidth(value) {
     if (value === '' || value === null || value === undefined) return;
     var num = parseInt(value, 10);
@@ -888,6 +931,7 @@
         scheduleDraftSave(value);
         updateEmptyState();
         scheduleStatusRender();
+        scheduleOutlineSpy();
       },
       ctrlEnter: function () {
         saveDraftNow(vditor.getValue());
@@ -904,6 +948,7 @@
         var chromeObserver = new MutationObserver(function () {
           renderModeLang();
           updateStatusVisibility();
+          scheduleOutlineSpy();
         });
         chromeObserver.observe(document.getElementById('vditor'), {
           attributes: true,
@@ -911,6 +956,11 @@
           childList: true,
           subtree: true
         });
+        var spyContainers = outlineSpyContainers();
+        for (var s = 0; s < spyContainers.length; s++) {
+          spyContainers[s].addEventListener('scroll', scheduleOutlineSpy, { passive: true });
+        }
+        updateOutlineSpy();
         applyTheme(theme);
         applyTypewriterPosition();
         updateTypewriterButton();
