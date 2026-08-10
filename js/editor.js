@@ -726,6 +726,47 @@
 
   var pendingRestoreValue = null;
 
+  function isCodeBlockContext(node) {
+    if (!node || !node.closest) return false;
+    return !!node.closest('code, [data-type="code-block"], [data-type="code-block-info"], ' +
+      '[data-type="code-block-open-marker"], [data-type="code-block-close-marker"]');
+  }
+
+  function shouldBlockHint(range) {
+    if (!range || !range.startContainer || range.startContainer.textContent == null) return false;
+    var node = range.startContainer;
+    if (node.nodeType === 3) node = node.parentElement;
+    if (isCodeBlockContext(node)) return true;
+    var beforeCursor = range.startContainer.textContent.substring(0, range.startOffset) || '';
+    var lastSlash = beforeCursor.lastIndexOf('/');
+    var lastColon = beforeCursor.lastIndexOf(':');
+    if (lastSlash <= lastColon) return false;
+    var prefix = beforeCursor.slice(0, lastSlash);
+    if (prefix !== '' && !/\s$/.test(prefix)) {
+      if (/[a-z][a-z0-9+.-]*:$/i.test(prefix) ||
+          /(^|\s)[a-z][a-z0-9+.-]*:\/\//i.test(prefix)) {
+        return true;
+      }
+    }
+    return beforeCursor.slice(lastSlash + 1).length > 32;
+  }
+
+  function patchHintRender() {
+    if (!vditor || !vditor.vditor || !vditor.vditor.hint) return;
+    var hint = vditor.vditor.hint;
+    var original = hint.render;
+    hint.render = function () {
+      var selection = window.getSelection();
+      var range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      if (shouldBlockHint(range)) {
+        this.element.style.display = 'none';
+        clearTimeout(this.timeId);
+        return;
+      }
+      return original.apply(this, arguments);
+    };
+  }
+
   var draftPromise = readDraft().catch(function (err) {
     setSaveStatus(mdI18n.t('storage.unavailable'), true, 'error');
     log('storage', 'Draft read failed', err);
@@ -744,6 +785,16 @@
       counter: { enable: true },
       outline: { enable: true, position: 'left' },
       tab: '\t',
+      hint: {
+        extend: [
+          {
+            key: '/',
+            hint: function (query) {
+              return MDSlashMenu.buildItems(query);
+            }
+          }
+        ]
+      },
       typewriterMode: typewriterMode,
       preview: {
         maxWidth: 4096,
@@ -938,6 +989,7 @@
       },
       after: function () {
         editorReady = true;
+        patchHintRender();
         if (pendingRestoreValue !== null) {
           vditor.setValue(pendingRestoreValue, true);
           pendingRestoreValue = null;

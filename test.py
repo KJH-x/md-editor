@@ -61,6 +61,7 @@ JS_REQUIRED_PATTERNS = {
     "file-io decode": r"decodeFile",
     "action registry": r"MD_ACTIONS",
     "command palette": r"MDCommandPalette",
+    "slash menu": r"MDSlashMenu",
 }
 
 CSS_REQUIRED_PATTERNS = {
