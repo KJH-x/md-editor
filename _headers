@@ -1,18 +1,30 @@
 /*
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; frame-src 'self'; form-action 'self'; upgrade-insecure-requests
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
-  X-Frame-Options: DENY
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: SAMEORIGIN
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), clipboard-write=(self), web-share=(self)
 
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
+  Link: </vendor/vditor/dist/index.min.js>; rel=preload; as=script, </vendor/vditor/dist/js/icons/ant.js>; rel=preload; as=script
+
+/vditor-shell.html
+  Link: </vendor/vditor/dist/index.min.js>; rel=preload; as=script, </vendor/vditor/dist/js/icons/ant.js>; rel=preload; as=script, </vendor/vditor/dist/index.css>; rel=preload; as=style
 
 /js/*
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /css/*
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=3600
