@@ -514,7 +514,97 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     if (force) saveDraftNow(content);
     log('save', 'Downloaded: ' + filename);
-}
+  }
+
+  function copyHtmlFallback(plainText) {
+    var textarea = document.createElement('textarea');
+    textarea.value = plainText;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch (err) {
+      log('export', 'execCommand copy failed', err);
+    }
+    document.body.removeChild(textarea);
+    if (ok) setSaveStatus(mdI18n.t('export.copyHtmlDone'), false, 'saved');
+  }
+
+  function copyAsHtml() {
+    if (!vditor || !vditor.vditor) return;
+    var html = '<div class="vditor-reset">' + (vditor.getHTML() || '') + '</div>';
+    var plain = vditor.getValue() || '';
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' })
+        })]).then(function () {
+          setSaveStatus(mdI18n.t('export.copyHtmlDone'), false, 'saved');
+        }, function () {
+          copyHtmlFallback(plain);
+        });
+        return;
+      } catch (err) {
+        log('export', 'ClipboardItem write failed', err);
+      }
+    }
+    copyHtmlFallback(plain);
+  }
+
+  function printToPdf() {
+    if (!vditor || !vditor.vditor) return;
+    var html = '<div class="vditor-reset">' + (vditor.getHTML() || '') + '</div>';
+    var frame = document.getElementById('md-print-frame');
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = 'md-print-frame';
+      frame.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;border:0;visibility:hidden;';
+      document.body.appendChild(frame);
+    }
+    frame.src = 'about:blank';
+    var frameDoc = frame.contentDocument;
+    frameDoc.open();
+    frameDoc.write('<!DOCTYPE html><html lang="' + (mdI18n.lang || 'zh-CN') + '"><head><meta charset="UTF-8">' +
+      '<link rel="stylesheet" href="vendor/vditor/dist/index.css">' +
+      '<link rel="stylesheet" href="css/style.css">' +
+      '<style>@media print{html,body{margin:0;padding:0}body{overflow:visible}}</style>' +
+      '</head><body>' + html + '</body></html>');
+    frameDoc.close();
+    setTimeout(function () {
+      var win = frame.contentWindow;
+      if (win && typeof win.print === 'function') {
+        try { win.print(); } catch (err) { log('export', 'print failed', err); }
+      }
+    }, 250);
+  }
+
+  function shareCurrent() {
+    if (!vditor || !vditor.vditor) return;
+    var markdown = vditor.getValue() || '';
+    if (!navigator.canShare || typeof navigator.share !== 'function') {
+      saveFile();
+      return;
+    }
+    var match = markdown.match(/^#\s+(.+)$/m);
+    var baseName = mdFileIO.sanitizeFilename(match ? match[1].trim() : mdI18n.t('untitled'));
+    function tryShare(file) {
+      var data = { files: [file], title: baseName };
+      if (!navigator.canShare(data)) return false;
+      navigator.share(data).catch(function (err) {
+        log('export', 'Web Share failed', err);
+      });
+      return true;
+    }
+    if (tryShare(new File([markdown], baseName + '.md', { type: 'text/markdown' }))) return;
+    if (tryShare(new File([markdown], baseName + '.txt', { type: 'text/plain' }))) return;
+    setSaveStatus(mdI18n.t('export.shareFallback'), false, 'saved');
+    saveFile();
+  }
 
   function transformCallouts(html) {
     return html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function (blockquote, inner) {
@@ -903,7 +993,39 @@
         },
         '|',
         'undo', 'redo', '|',
-        'edit-mode', 'code-theme', 'export', '|',
+        'edit-mode', 'code-theme', 'export',
+        {
+          name: 'export2',
+          tip: mdI18n.t('export.title'),
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+          toolbar: [
+            {
+              name: 'copyHtml',
+              tip: mdI18n.t('export.copyHtml'),
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+              click: copyAsHtml
+            },
+            {
+              name: 'printPdf',
+              tip: mdI18n.t('export.printPdf'),
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+              click: printToPdf
+            },
+            {
+              name: 'share',
+              tip: mdI18n.t('export.share'),
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
+              click: shareCurrent
+            },
+            {
+              name: 'download',
+              tip: mdI18n.t('export.download'),
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+              click: function () { saveFile(); }
+            }
+          ]
+        },
+        '|',
         'outline', 'fullscreen',
         {
           name: 'typewriter',
@@ -1106,7 +1228,7 @@
     var editor = vditor.vditor;
     var toolbar = editor.options.toolbar;
     if (!toolbar) return;
-    var customNames = { open: 1, save: 1, pagewidth: 1, theme: 1, typewriter: 1, diagram: 1, lang: 1 };
+    var customNames = { open: 1, save: 1, pagewidth: 1, theme: 1, typewriter: 1, diagram: 1, lang: 1, export2: 1 };
     var toolbarCategories = {
       emoji: 'insert', headings: 'format', bold: 'format', italic: 'format',
       strike: 'format', link: 'insert', list: 'format', 'ordered-list': 'format',
@@ -1142,25 +1264,27 @@
     toolbar.forEach(function (item) {
       if (!item || typeof item !== 'object' || !item.name) return;
       if (!customNames[item.name]) return;
-      if (item.name === 'diagram') {
+      if (item.name === 'diagram' || item.name === 'export2') {
+        var isDiagram = item.name === 'diagram';
+        var parentId = item.name;
         window.MD_ACTIONS.register({
-          id: 'diagram',
+          id: parentId,
           label: item.tip || item.name,
-          category: 'insert',
+          category: isDiagram ? 'insert' : 'file',
           shortcut: '',
-          keywords: ['diagram', item.tip || item.name],
+          keywords: [parentId, item.tip || item.name],
           run: function () {
             var el = vditor && vditor.vditor && vditor.vditor.toolbar &&
-              vditor.vditor.toolbar.elements.diagram;
+              vditor.vditor.toolbar.elements[parentId];
             if (el && el.children[0]) el.children[0].click();
           }
         });
         (item.toolbar || []).forEach(function (sub) {
           if (!sub || !sub.name || typeof sub.click !== 'function') return;
           window.MD_ACTIONS.register({
-            id: 'diagram.' + sub.name,
+            id: parentId + '.' + sub.name,
             label: sub.tip || sub.name,
-            category: 'insert',
+            category: isDiagram ? 'insert' : 'file',
             shortcut: '',
             keywords: [sub.name, sub.tip || sub.name],
             run: function () { sub.click(); }

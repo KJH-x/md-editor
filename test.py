@@ -65,6 +65,11 @@ JS_REQUIRED_PATTERNS = {
     "slash menu": r"MDSlashMenu",
     "floating format bar module": r"MDFormatBar",
     "find & replace": r"MDFindReplace",
+    "copyAsHtml fn": r"function\s+copyAsHtml\b",
+    "ClipboardItem write": r"ClipboardItem",
+    "printToPdf fn": r"function\s+printToPdf\b",
+    "shareCurrent fn": r"function\s+shareCurrent\b",
+    "export toolbar button": r"name:\s*'export2'",
 }
 
 CSS_REQUIRED_PATTERNS = {
