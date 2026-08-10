@@ -53,13 +53,15 @@
     return (next || lang) === 'ar-AR';
   }
 
-  function setLang(next) {
+  function setLang(next, noPersist) {
     if (!SUPPORTED[next]) next = defaultLang();
     lang = next;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, lang);
-    } catch (err) {
-      // localStorage unavailable; keep in-memory lang
+    if (!noPersist) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, lang);
+      } catch (err) {
+        // localStorage unavailable; keep in-memory lang
+      }
     }
     document.documentElement.lang = lang;
     document.documentElement.dir = isRTL() ? 'rtl' : 'ltr';

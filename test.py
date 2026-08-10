@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent
 
 REQUIRED_FILES = [
     "index.html",
+    "vditor-shell.html",
     "css/style.css",
     "js/editor.js",
     "js/file-io.js",
@@ -75,6 +76,9 @@ JS_REQUIRED_PATTERNS = {
     "RTL detection": r"isRTL",
     "accessibility keys (a11y)": r"a11y",
     "aria-label usage": r"aria-label",
+    "tab bridge": r"TabHost",
+    "postMessage bridge": r"postMessage",
+    "URLSearchParams": r"URLSearchParams",
 }
 
 CSS_REQUIRED_PATTERNS = {
@@ -134,9 +138,14 @@ def validate():
 
     # ---- 2. HTML references ----
     print(f"\n{'[2] HTML references':<30}")
-    html_path = ROOT / "index.html"
-    if html_path.exists():
-        html = html_path.read_text(encoding="utf-8")
+    html_paths = ["index.html", "vditor-shell.html"]
+    for html_path in html_paths:
+        html_file = ROOT / html_path
+        if not html_file.exists():
+            errors.append(f"{html_path} not found")
+            print(f"  {red(chr(0x2717))} {html_path} MISSING")
+            continue
+        html = html_file.read_text(encoding="utf-8")
         refs = []
 
         for attr, pattern in [("href", r'href="([^"]+\.css)"'), ("src", r'src="([^"]+\.js)"')]:
@@ -147,33 +156,31 @@ def validate():
 
         for ref, label in refs:
             if label == "external":
-                print(f"  {red(chr(0x2717))} {ref} EXTERNAL")
-                errors.append(f"External runtime dependency: {ref}")
+                print(f"  {red(chr(0x2717))} {html_path}: {ref} EXTERNAL")
+                errors.append(f"External runtime dependency: {ref} ({html_path})")
             else:
                 p = ROOT / ref
                 if p.exists():
-                    print(f"  {green(chr(0x2713))} {ref}")
+                    print(f"  {green(chr(0x2713))} {html_path}: {ref}")
                 else:
-                    print(f"  {red(chr(0x2717))} {ref} NOT FOUND")
-                    errors.append(f"Reference not found: {ref}")
+                    print(f"  {red(chr(0x2717))} {html_path}: {ref} NOT FOUND")
+                    errors.append(f"Reference not found: {ref} ({html_path})")
 
         if 'id="vditor"' not in html:
-            errors.append("Missing #vditor container element")
-            print(f"  {red(chr(0x2717))} #vditor container MISSING")
+            errors.append(f"Missing #vditor container element ({html_path})")
+            print(f"  {red(chr(0x2717))} {html_path}: #vditor container MISSING")
         else:
-            print(f"  {green(chr(0x2713))} #vditor container found")
+            print(f"  {green(chr(0x2713))} {html_path}: #vditor container found")
 
         if 'file-io.js' in html:
             if (ROOT / "js/file-io.js").exists():
-                print(f"  {green(chr(0x2713))} file-io.js referenced and present")
+                print(f"  {green(chr(0x2713))} {html_path}: file-io.js referenced and present")
             else:
-                print(f"  {red(chr(0x2717))} file-io.js referenced but NOT FOUND")
-                errors.append("Reference not found: js/file-io.js")
+                print(f"  {red(chr(0x2717))} {html_path}: file-io.js referenced but NOT FOUND")
+                errors.append(f"Reference not found: js/file-io.js ({html_path})")
         else:
-            print(f"  {yellow('!')} file-io.js reference missing")
-            warnings.append("HTML: file-io.js reference missing")
-    else:
-        errors.append("index.html not found")
+            print(f"  {yellow('!')} {html_path}: file-io.js reference missing")
+            warnings.append(f"HTML: file-io.js reference missing ({html_path})")
 
     # ---- 3. JS code validation ----
     print(f"\n{'[3] JS structure':<30}")
