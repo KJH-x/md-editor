@@ -891,6 +891,7 @@
         applyTheme(theme);
         applyTypewriterPosition();
         updateTypewriterButton();
+        buildActionRegistry();
         if (vditor.vditor.options.preview.transform) {
           log('preview', 'callout transform attached');
         }
@@ -898,7 +899,8 @@
           window.__mdEditorTest = {
             editor: vditor,
             saveDraft: saveDraftNow,
-            insertImages: handleImageFiles
+            insertImages: handleImageFiles,
+            actions: window.MD_ACTIONS
           };
         }
         log('init', 'Vditor ready', {
@@ -951,6 +953,139 @@
     applyPageWidth(pageWidth);
     saveStateMessage = '';
     log('i18n', 'Language switched to ' + next, { mode: currentMode });
+  }
+
+  var actionsBuilt = false;
+
+  function buildActionRegistry() {
+    if (actionsBuilt || !window.MD_ACTIONS) return;
+    actionsBuilt = true;
+    var editor = vditor.vditor;
+    var toolbar = editor.options.toolbar;
+    if (!toolbar) return;
+    var customNames = { open: 1, save: 1, pagewidth: 1, theme: 1, typewriter: 1, diagram: 1, lang: 1 };
+    var toolbarCategories = {
+      emoji: 'insert', headings: 'format', bold: 'format', italic: 'format',
+      strike: 'format', link: 'insert', list: 'format', 'ordered-list': 'format',
+      check: 'format', outdent: 'format', indent: 'format', quote: 'format',
+      line: 'format', code: 'format', 'inline-code': 'format', table: 'insert',
+      undo: 'view', redo: 'view', fullscreen: 'view', both: 'view',
+      'insert-before': 'view', 'insert-after': 'view', 'code-theme': 'view',
+      export: 'view', outline: 'view', preview: 'view', devtools: 'view'
+    };
+    toolbar.forEach(function (item) {
+      if (!item || typeof item !== 'object' || !item.name) return;
+      if (!item.hotkey || customNames[item.name]) return;
+      var label = (window.VditorI18n && window.VditorI18n[item.name]) || item.tip || item.name;
+      window.MD_ACTIONS.register({
+        id: item.name,
+        label: label,
+        category: toolbarCategories[item.name] || 'format',
+        shortcut: item.hotkey,
+        keywords: [item.name, label],
+        run: function () {
+          var el = vditor && vditor.vditor && vditor.vditor.toolbar &&
+            vditor.vditor.toolbar.elements[item.name];
+          if (el && el.children[0]) el.children[0].click();
+        },
+        enabled: function () {
+          var el = vditor && vditor.vditor && vditor.vditor.toolbar &&
+            vditor.vditor.toolbar.elements[item.name];
+          return !!(el && el.children[0] &&
+            !el.children[0].classList.contains('vditor-menu--disabled'));
+        }
+      });
+    });
+    toolbar.forEach(function (item) {
+      if (!item || typeof item !== 'object' || !item.name) return;
+      if (!customNames[item.name]) return;
+      if (item.name === 'diagram') {
+        window.MD_ACTIONS.register({
+          id: 'diagram',
+          label: item.tip || item.name,
+          category: 'insert',
+          shortcut: '',
+          keywords: ['diagram', item.tip || item.name],
+          run: function () {
+            var el = vditor && vditor.vditor && vditor.vditor.toolbar &&
+              vditor.vditor.toolbar.elements.diagram;
+            if (el && el.children[0]) el.children[0].click();
+          }
+        });
+        (item.toolbar || []).forEach(function (sub) {
+          if (!sub || !sub.name || typeof sub.click !== 'function') return;
+          window.MD_ACTIONS.register({
+            id: 'diagram.' + sub.name,
+            label: sub.tip || sub.name,
+            category: 'insert',
+            shortcut: '',
+            keywords: [sub.name, sub.tip || sub.name],
+            run: function () { sub.click(); }
+          });
+        });
+        return;
+      }
+      var label = item.tip || item.name;
+      var category = (item.name === 'open' || item.name === 'save' || item.name === 'pagewidth')
+        ? 'file' : 'settings';
+      window.MD_ACTIONS.register({
+        id: item.name,
+        label: label,
+        category: category,
+        shortcut: item.hotkey || '',
+        keywords: [item.name, label],
+        run: function () {
+          if (typeof item.click === 'function') item.click();
+        }
+      });
+    });
+    ['wysiwyg', 'ir', 'sv'].forEach(function (mode) {
+      var modeShortcut = mode === 'wysiwyg' ? 'Alt+Ctrl+7' : mode === 'ir' ? 'Alt+Ctrl+8' : 'Alt+Ctrl+9';
+      window.MD_ACTIONS.register({
+        id: 'app.' + mode,
+        label: mdI18n.t('action.mode.' + mode),
+        category: 'app',
+        shortcut: modeShortcut,
+        keywords: [mode, mdI18n.t('action.mode.' + mode)],
+        run: function () {
+          var editMode = vditor && vditor.vditor && vditor.vditor.toolbar &&
+            vditor.vditor.toolbar.elements['edit-mode'];
+          var button = editMode && editMode.querySelector('button[data-mode="' + mode + '"]');
+          if (button) button.click();
+        },
+        enabled: function () {
+          return !!(vditor && vditor.vditor) && vditor.getCurrentMode() !== mode;
+        }
+      });
+    });
+    window.MD_ACTIONS.register({
+      id: 'app.theme',
+      label: mdI18n.t('action.theme.cycle'),
+      category: 'app',
+      shortcut: '',
+      keywords: ['theme', mdI18n.t('action.theme.cycle')],
+      run: function () {
+        applyTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'auto' : 'light');
+      }
+    });
+    window.MD_ACTIONS.register({
+      id: 'app.lang',
+      label: mdI18n.t('action.lang.switch'),
+      category: 'app',
+      shortcut: '',
+      keywords: ['lang', 'language', mdI18n.t('action.lang.switch')],
+      run: function () {
+        switchLanguage(mdI18n.lang === 'zh-CN' ? 'en-US' : 'zh-CN');
+      }
+    });
+    window.MD_ACTIONS.register({
+      id: 'find-replace',
+      label: mdI18n.t('action.findReplace'),
+      category: 'app',
+      shortcut: '',
+      keywords: ['find', 'replace', mdI18n.t('action.findReplace')],
+      run: function () {}
+    });
   }
 
   log('init', 'Creating Vditor instance...');

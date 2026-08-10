@@ -23,6 +23,7 @@ REQUIRED_FILES = [
     "css/style.css",
     "js/editor.js",
     "js/file-io.js",
+    "js/actions.js",
     "LICENSE",
     "README.md",
     ".gitignore",
@@ -55,6 +56,7 @@ JS_REQUIRED_PATTERNS = {
     "md-pagewidth localStorage": r"md-pagewidth",
     "file-io sanitize": r"sanitizeFilename",
     "file-io decode": r"decodeFile",
+    "action registry": r"MD_ACTIONS",
 }
 
 CSS_REQUIRED_PATTERNS = {
