@@ -764,7 +764,7 @@
         }
       },
       toolbar: [
-        'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
+        'emoji', 'headings', 'bold', 'italic', 'strike', { name: 'link', hotkey: '' }, '|',
         'list', 'ordered-list', 'check',
         { name: 'outdent', hotkey: '⇧Tab', tipPosition: 'n' },
         'indent', '|',
@@ -965,6 +965,9 @@
         applyTypewriterPosition();
         updateTypewriterButton();
         buildActionRegistry();
+        if (window.MDCommandPalette && typeof window.MDCommandPalette.ensure === 'function') {
+          window.MDCommandPalette.ensure();
+        }
         if (vditor.vditor.options.preview.transform) {
           log('preview', 'callout transform attached');
         }
@@ -1159,6 +1162,16 @@
       keywords: ['find', 'replace', mdI18n.t('action.findReplace')],
       run: function () {}
     });
+    window.MD_ACTIONS.register({
+      id: 'palette',
+      label: mdI18n.t('action.palette'),
+      category: 'app',
+      shortcut: 'Ctrl+K',
+      keywords: ['palette', 'command palette', mdI18n.t('action.palette')],
+      run: function () {
+        if (window.MDCommandPalette) window.MDCommandPalette.open();
+      }
+    });
   }
 
   log('init', 'Creating Vditor instance...');
@@ -1240,6 +1253,12 @@
       event.preventDefault();
       event.stopPropagation();
       openFile();
+      return;
+    }
+    if (mod && event.key.toLowerCase() === 'k' && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (window.MDCommandPalette) window.MDCommandPalette.toggle();
       return;
     }
     if (event.key === '?' && !mod && !event.altKey && !targetInEditorArea(event.target)) {

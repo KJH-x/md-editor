@@ -96,6 +96,16 @@
     'action.mode.sv': 'Switch to SV split preview mode',
     'action.theme.cycle': 'Cycle theme (light / dark / system)',
     'action.lang.switch': 'Switch language',
-    'action.findReplace': 'Find and replace'
+    'action.findReplace': 'Find and replace',
+    'action.palette': 'Open command palette',
+    'palette.title': 'Command palette',
+    'palette.placeholder': 'Search actions…',
+    'palette.noResults': 'No matching actions',
+    'palette.cat.insert': 'Insert',
+    'palette.cat.format': 'Format',
+    'palette.cat.view': 'View',
+    'palette.cat.file': 'File',
+    'palette.cat.settings': 'Settings',
+    'palette.cat.app': 'App'
   };
 })();
