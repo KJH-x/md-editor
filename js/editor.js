@@ -20,9 +20,17 @@
   var restoringDraft = false;
   var vditor = null;
   var THEME_KEY = 'md-theme';
-  var theme = safeStorageGet(THEME_KEY) ||
-    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') || 'light';
-  document.documentElement.setAttribute('data-theme', theme);
+  var theme = safeStorageGet(THEME_KEY) || 'auto';
+  var darkMedia = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+
+  function resolveTheme(value) {
+    return value === 'auto'
+      ? (darkMedia && darkMedia.matches ? 'dark' : 'light')
+      : (value === 'dark' ? 'dark' : 'light');
+  }
+
+  var effectiveInit = resolveTheme(theme);
+  document.documentElement.setAttribute('data-theme', effectiveInit);
 
   function log(tag, msg, data) {
     if (!DEBUG) return;
@@ -86,28 +94,48 @@
     dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
   };
 
+  var THEME_LABELS = {
+    light: '浅色主题',
+    dark: '深色主题',
+    auto: '跟随系统主题'
+  };
+
   var CONTENT_THEME_PATH = new URL('vendor/vditor/dist/css/content-theme', document.baseURI).href.replace(/\/$/, '');
 
   function updateThemeIcon() {
     var btn = document.querySelector('.vditor-toolbar button[data-type="theme"]');
     if (!btn) return;
     btn.innerHTML = THEME_ICONS[theme] || THEME_ICONS.light;
+    btn.title = THEME_LABELS[theme] || THEME_LABELS.light;
   }
 
   function applyTheme(next) {
     theme = next;
-    document.documentElement.setAttribute('data-theme', theme);
+    var effective = resolveTheme(next);
+    document.documentElement.setAttribute('data-theme', effective);
     if (vditor) {
       try {
-        vditor.setTheme(theme, theme === 'dark' ? 'dark' : 'light',
-          theme === 'dark' ? 'github-dark' : 'github', CONTENT_THEME_PATH);
+        vditor.setTheme(effective, effective === 'dark' ? 'dark' : 'light',
+          effective === 'dark' ? 'github-dark' : 'github', CONTENT_THEME_PATH);
       } catch (err) {
         log('theme', 'setTheme failed', err);
       }
     }
     updateThemeIcon();
-    safeStorageSet(THEME_KEY, theme);
-    log('theme', 'Theme set to ' + theme);
+    safeStorageSet(THEME_KEY, next);
+    log('theme', 'Theme set to ' + next + ' (effective ' + effective + ')');
+  }
+
+  function onSystemThemeChange() {
+    if (theme === 'auto') applyTheme('auto');
+  }
+
+  if (darkMedia) {
+    if (darkMedia.addEventListener) {
+      darkMedia.addEventListener('change', onSystemThemeChange);
+    } else if (darkMedia.addListener) {
+      darkMedia.addListener(onSystemThemeChange);
+    }
   }
 
   function openDatabase() {
@@ -391,6 +419,7 @@
     outline: { enable: true, position: 'left' },
     preview: {
       maxWidth: 4096,
+      theme: { current: effectiveInit, list: {} },
       hljs: { enable: true, style: 'github' },
       markdown: {
         autoSpace: true,
@@ -404,7 +433,7 @@
       'quote', 'line', 'code', 'inline-code', '|',
       'upload', 'table', '|',
       'undo', 'redo', '|',
-      'edit-mode', 'content-theme', 'code-theme', 'export', '|',
+      'edit-mode', 'code-theme', 'export', '|',
       'outline', 'fullscreen',
       {
         name: 'open',
@@ -474,10 +503,10 @@
       },
       {
         name: 'theme',
-        tip: '切换浅色 / 深色主题',
+        tip: '切换浅色 / 深色 / 跟随系统主题',
         icon: THEME_ICONS.light,
         click: function () {
-          applyTheme(theme === 'dark' ? 'light' : 'dark');
+          applyTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'auto' : 'light');
         }
       },
       'help'
