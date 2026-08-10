@@ -1391,3 +1391,39 @@ body:has(.vditor--fullscreen) #statusbar {
     padding: 20px 20px !important;
   }
 }
+
+/* ---- Print (CSP-safe export) ---- */
+
+@media print {
+  body {
+    overflow: visible;
+  }
+
+  .vditor-toolbar,
+  #statusbar,
+  .editor-brand,
+  .save-status,
+  #shortcut-overlay,
+  .md-palette,
+  #empty-state,
+  #md-formatbar,
+  #md-find-replace,
+  .md-modal-backdrop {
+    display: none !important;
+  }
+
+  .vditor-content > .vditor-wysiwyg,
+  .vditor-content > .vditor-sv.vditor-reset,
+  .vditor-content > .vditor-ir,
+  .vditor-content > .vditor-preview {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .vditor-wysiwyg .vditor-reset,
+  .vditor-ir .vditor-reset,
+  .vditor-sv.vditor-reset {
+    padding: 0 !important;
+  }
+}
