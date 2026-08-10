@@ -27,6 +27,14 @@
   <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
   <div class="editor-brand">md-editor · Powered by Vditor</div>
   <noscript>此编辑器需要启用 JavaScript。</noscript>
+  <div id="statusbar" role="status" aria-live="polite">
+    <span class="statusbar__seg" id="statusbar-save"><span class="statusbar__dot"></span><span class="statusbar__save-text"></span></span>
+    <span class="statusbar__seg" id="statusbar-counts"></span>
+    <span class="statusbar__seg" id="statusbar-reading"></span>
+    <span class="statusbar__seg" id="statusbar-mode"></span>
+    <span class="statusbar__seg" id="statusbar-lang"></span>
+    <span class="statusbar__seg statusbar__hint">Alt+Ctrl+7/8/9 切换模式</span>
+  </div>
   <script src="vendor/vditor/dist/js/icons/ant.js" id="vditorIconScript"></script>
   <script src="vendor/vditor/dist/index.min.js"></script>
   <script src="js/file-io.js"></script>
