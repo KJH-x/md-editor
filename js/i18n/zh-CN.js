@@ -96,6 +96,16 @@
     'action.mode.sv': '切换到 SV 分屏预览模式',
     'action.theme.cycle': '循环切换主题（浅色 / 深色 / 跟随系统）',
     'action.lang.switch': '切换语言',
-    'action.findReplace': '查找与替换'
+    'action.findReplace': '查找与替换',
+    'action.findReplaceToggle': '显示 / 隐藏查找面板',
+    'find.title': '查找与替换',
+    'find.placeholder': '查找内容',
+    'find.replacePlaceholder': '替换为',
+    'find.count': '{current} / {total}',
+    'find.replace': '替换',
+    'find.replaceAll': '全部替换',
+    'find.case': '区分大小写',
+    'find.next': '下一个',
+    'find.prev': '上一个'
   };
 })();

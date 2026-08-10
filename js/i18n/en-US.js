@@ -96,6 +96,16 @@
     'action.mode.sv': 'Switch to SV split preview mode',
     'action.theme.cycle': 'Cycle theme (light / dark / system)',
     'action.lang.switch': 'Switch language',
-    'action.findReplace': 'Find and replace'
+    'action.findReplace': 'Find and replace',
+    'action.findReplaceToggle': 'Toggle find panel',
+    'find.title': 'Find and Replace',
+    'find.placeholder': 'Find',
+    'find.replacePlaceholder': 'Replace with',
+    'find.count': '{current} of {total}',
+    'find.replace': 'Replace',
+    'find.replaceAll': 'Replace All',
+    'find.case': 'Case sensitive',
+    'find.next': 'Next',
+    'find.prev': 'Previous'
   };
 })();

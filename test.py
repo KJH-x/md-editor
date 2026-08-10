@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "js/editor.js",
     "js/file-io.js",
     "js/actions.js",
+    "js/ui/find-replace.js",
     "LICENSE",
     "README.md",
     ".gitignore",
@@ -60,6 +61,7 @@ JS_REQUIRED_PATTERNS = {
     "file-io sanitize": r"sanitizeFilename",
     "file-io decode": r"decodeFile",
     "action registry": r"MD_ACTIONS",
+    "find & replace": r"MDFindReplace",
 }
 
 CSS_REQUIRED_PATTERNS = {

@@ -18,6 +18,8 @@
   --md-panel-bg: #ffffff;
   --md-content-bg: #ffffff;
   --md-selection: rgba(59, 130, 246, 0.22);
+  --md-find-bg: #ffe58a;
+  --md-find-fg: #1f2328;
   --md-radius: 8px;
   --md-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --md-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -42,6 +44,8 @@
   --md-panel-bg: #1c2128;
   --md-content-bg: #0d1117;
   --md-selection: rgba(83, 155, 245, 0.32);
+  --md-find-bg: #d29922;
+  --md-find-fg: #1b1f24;
   --md-radius: 8px;
   --md-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --md-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -720,6 +724,120 @@ body {
   background: color-mix(in srgb, var(--md-danger) 85%, #000);
   border-color: color-mix(in srgb, var(--md-danger) 85%, #000);
   color: #ffffff;
+}
+
+/* ---- Find & Replace ---- */
+
+#md-find-replace {
+  position: fixed;
+  top: 56px;
+  right: 16px;
+  z-index: 150;
+  width: min(340px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  background: var(--md-panel-bg);
+  color: var(--md-text);
+  box-shadow: var(--md-shadow);
+  font: 13px/1.4 var(--md-font);
+}
+
+#md-find-replace[hidden] {
+  display: none !important;
+}
+
+.md-find-replace__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.md-find-replace__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.md-find-replace__row:first-of-type {
+  margin-top: 0;
+}
+
+.md-find-replace__input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background: var(--md-content-bg);
+  color: var(--md-text);
+  font: 13px/1.4 var(--md-font);
+}
+
+.md-find-replace__input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.md-find-replace__count {
+  flex: 1;
+  min-width: 0;
+  color: var(--md-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.md-find-replace__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.md-find-replace__btn {
+  padding: 5px 10px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background: var(--md-toolbar-bg);
+  color: var(--md-text);
+  font: 12px/1 var(--md-font);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.md-find-replace__btn:hover {
+  color: var(--md-icon-hover);
+  background-color: var(--md-icon-hover-bg);
+}
+
+.md-find-replace__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.md-find-replace__btn--primary {
+  border-color: var(--md-accent);
+  background: var(--md-accent);
+  color: #ffffff;
+}
+
+.md-find-replace__btn--primary:hover {
+  background: color-mix(in srgb, var(--md-accent) 85%, #000);
+  border-color: color-mix(in srgb, var(--md-accent) 85%, #000);
+  color: #ffffff;
+}
+
+.md-find-replace__btn.is-active {
+  border-color: var(--md-accent);
+  color: var(--md-accent);
+  background-color: var(--md-accent-bg);
+}
+
+mark.md-find-hi {
+  background: var(--md-find-bg);
+  color: var(--md-find-fg);
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 /* ---- Status bar ---- */
