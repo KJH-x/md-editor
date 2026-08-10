@@ -139,7 +139,7 @@
   }
 
   function renderModeLang() {
-    if (!vditor) return;
+    if (!vditor || !vditor.vditor) return;
     var mode = vditor.getCurrentMode();
     var lang = vditor.vditor && vditor.vditor.options && vditor.vditor.options.lang;
     setTextContent(statusbarMode, MODE_LABELS[mode] || mode || '');
