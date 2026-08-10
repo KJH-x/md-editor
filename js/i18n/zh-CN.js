@@ -155,6 +155,20 @@
     'find.prev': "上一个",
     'a11y.upload': '上传图片',
     'a11y.editorLabel': '编辑器内容区',
-    'a11y.hintMenu': '编辑器命令菜单'
+    'a11y.hintMenu': '编辑器命令菜单',
+    'shell.newTab': '新建标签',
+    'shell.newDoc': '新建文档',
+    'shell.closeTab': '关闭标签',
+    'shell.nextTab': '下一个标签',
+    'shell.export': '导出全部文档 (JSON)',
+    'shell.exportDone': '已导出全部文档',
+    'shell.openFile': '打开文件到当前标签',
+    'shell.pagewidth': '设置页面宽度',
+    'statusbar.docs': '文档 {n}',
+    'statusbar.shellHint': 'Ctrl+T 新建 · Ctrl+W 关闭 · Ctrl+S 保存',
+    'overlay.s.newTab': '新建标签页 (Ctrl+T)',
+    'overlay.s.closeTab': '关闭当前标签页 (Ctrl+W)',
+    'overlay.s.nextTab': '切换到下一个标签页 (Ctrl+Tab)',
+    'overlay.s.palette': '打开命令面板 (Ctrl+K)'
   };
 })();

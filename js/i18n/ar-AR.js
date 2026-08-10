@@ -155,7 +155,21 @@
     'fsa.unsupported': "الحفظ في الملف غير مدعوم؛ تم التنزيل",
     'a11y.upload': "رفع صورة",
     'a11y.editorLabel': "محرر",
-    'a11y.hintMenu': "قائمة الإدراج"
+    'a11y.hintMenu': "قائمة الإدراج",
+    'shell.newTab': "تبويب جديد",
+    'shell.newDoc': "مستند جديد",
+    'shell.closeTab': "إغلاق التبويب",
+    'shell.nextTab': "التبويب التالي",
+    'shell.export': "تصدير كل المستندات (JSON)",
+    'shell.exportDone': "تم تصدير كل المستندات",
+    'shell.openFile': "فتح ملف في التبويب الحالي",
+    'shell.pagewidth': "ضبط عرض الصفحة",
+    'statusbar.docs': "{n} مستندات",
+    'statusbar.shellHint': "Ctrl+T جديد · Ctrl+W إغلاق · Ctrl+S حفظ",
+    'overlay.s.newTab': "تبويب جديد (Ctrl+T)",
+    'overlay.s.closeTab': "إغلاق التبويب الحالي (Ctrl+W)",
+    'overlay.s.nextTab': "الانتقال إلى التبويب التالي (Ctrl+Tab)",
+    'overlay.s.palette': "فتح لوحة الأوامر (Ctrl+K)"
   };
 })();
 

@@ -155,7 +155,21 @@
     'fsa.unsupported': "फ़ाइल सहेजना समर्थित नहीं; डाउनलोड हुआ",
     'a11y.upload': "छवि अपलोड करें",
     'a11y.editorLabel': "संपादक",
-    'a11y.hintMenu': "सम्मिलन मेनू"
+    'a11y.hintMenu': "सम्मिलन मेनू",
+    'shell.newTab': "नया टैब",
+    'shell.newDoc': "नया दस्तावेज़",
+    'shell.closeTab': "टैब बंद करें",
+    'shell.nextTab': "अगला टैब",
+    'shell.export': "सभी दस्तावेज़ निर्यात करें (JSON)",
+    'shell.exportDone': "सभी दस्तावेज़ निर्यात किए गए",
+    'shell.openFile': "वर्तमान टैब में फ़ाइल खोलें",
+    'shell.pagewidth': "पृष्ठ चौड़ाई सेट करें",
+    'statusbar.docs': "{n} दस्तावेज़",
+    'statusbar.shellHint': "Ctrl+T नया · Ctrl+W बंद · Ctrl+S सहेजें",
+    'overlay.s.newTab': "नया टैब (Ctrl+T)",
+    'overlay.s.closeTab': "वर्तमान टैब बंद करें (Ctrl+W)",
+    'overlay.s.nextTab': "अगले टैब पर जाएँ (Ctrl+Tab)",
+    'overlay.s.palette': "कमांड पैलेट खोलें (Ctrl+K)"
   };
 })();
 

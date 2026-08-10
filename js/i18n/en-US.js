@@ -155,6 +155,20 @@
     'find.prev': "Previous",
     'a11y.upload': 'Upload image',
     'a11y.editorLabel': 'Editor content area',
-    'a11y.hintMenu': 'Editor commands'
+    'a11y.hintMenu': 'Editor commands',
+    'shell.newTab': 'New tab',
+    'shell.newDoc': 'New document',
+    'shell.closeTab': 'Close tab',
+    'shell.nextTab': 'Next tab',
+    'shell.export': 'Export all documents (JSON)',
+    'shell.exportDone': 'All documents exported',
+    'shell.openFile': 'Open file into current tab',
+    'shell.pagewidth': 'Set page width',
+    'statusbar.docs': '{n} docs',
+    'statusbar.shellHint': 'Ctrl+T new · Ctrl+W close · Ctrl+S save',
+    'overlay.s.newTab': 'New tab (Ctrl+T)',
+    'overlay.s.closeTab': 'Close current tab (Ctrl+W)',
+    'overlay.s.nextTab': 'Switch to next tab (Ctrl+Tab)',
+    'overlay.s.palette': 'Open command palette (Ctrl+K)'
   };
 })();
