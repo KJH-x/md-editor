@@ -96,6 +96,23 @@
     'action.mode.sv': '切换到 SV 分屏预览模式',
     'action.theme.cycle': '循环切换主题（浅色 / 深色 / 跟随系统）',
     'action.lang.switch': '切换语言',
-    'action.findReplace': '查找与替换'
+    'action.findReplace': '查找与替换',
+    'slash.heading1': '标题 1',
+    'slash.heading2': '标题 2',
+    'slash.heading3': '标题 3',
+    'slash.heading4': '标题 4',
+    'slash.heading5': '标题 5',
+    'slash.heading6': '标题 6',
+    'slash.quote': '引用',
+    'slash.code': '代码块',
+    'slash.inline': '行内代码',
+    'slash.table': '表格',
+    'slash.task': '任务列表',
+    'slash.taskText': '待办事项',
+    'slash.math': '数学公式',
+    'slash.mermaid': 'Mermaid 图表',
+    'slash.callout': '提示框',
+    'slash.hr': '分割线',
+    'slash.image': '图片'
   };
 })();

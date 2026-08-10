@@ -96,6 +96,23 @@
     'action.mode.sv': 'Switch to SV split preview mode',
     'action.theme.cycle': 'Cycle theme (light / dark / system)',
     'action.lang.switch': 'Switch language',
-    'action.findReplace': 'Find and replace'
+    'action.findReplace': 'Find and replace',
+    'slash.heading1': 'Heading 1',
+    'slash.heading2': 'Heading 2',
+    'slash.heading3': 'Heading 3',
+    'slash.heading4': 'Heading 4',
+    'slash.heading5': 'Heading 5',
+    'slash.heading6': 'Heading 6',
+    'slash.quote': 'Quote',
+    'slash.code': 'Code block',
+    'slash.inline': 'Inline code',
+    'slash.table': 'Table',
+    'slash.task': 'Task list',
+    'slash.taskText': 'Task',
+    'slash.math': 'Math formula',
+    'slash.mermaid': 'Mermaid diagram',
+    'slash.callout': 'Callout',
+    'slash.hr': 'Horizontal rule',
+    'slash.image': 'Image'
   };
 })();
