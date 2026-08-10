@@ -71,6 +71,8 @@ JS_REQUIRED_PATTERNS = {
     "printToPdf fn": r"function\s+printToPdf\b",
     "shareCurrent fn": r"function\s+shareCurrent\b",
     "export toolbar button": r"name:\s*'export2'",
+    "custom vditor i18n object": r"mdVditorI18n",
+    "RTL detection": r"isRTL",
 }
 
 CSS_REQUIRED_PATTERNS = {

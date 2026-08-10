@@ -29,8 +29,11 @@
   var LANG_LABELS = {
     zh_CN: '中文', zh_TW: '繁體中文', en_US: 'English', ja_JP: '日本語',
     de_DE: 'Deutsch', es_ES: 'Español', fr_FR: 'Français', ko_KR: '한국어',
-    pt_BR: 'Português', ru_RU: 'Русский', vi_VN: 'Tiếng Việt'
+    pt_BR: 'Português', ru_RU: 'Русский', vi_VN: 'Tiếng Việt',
+    hi_IN: 'हिन्दी', ar_AR: 'العربية'
   };
+  var LANG_CYCLE = ['zh-CN', 'en-US', 'es-ES', 'hi-IN', 'ar-AR'];
+  var VDTOR_LANG = { 'zh-CN': 'zh_CN', 'en-US': 'en_US', 'es-ES': 'es_ES', 'hi-IN': 'hi_IN', 'ar-AR': 'ar_AR' };
   var databasePromise = null;
   var saveTimer = null;
   var pageWidth = safeStorageGet('md-pagewidth') || '';
@@ -922,10 +925,15 @@
   });
 
   function createVditor(initialValue) {
-    return new Vditor('vditor', {
+    var containerEl = document.getElementById('vditor');
+    if (containerEl) containerEl.removeAttribute('dir');
+    var vditorLang = VDTOR_LANG[mdI18n.lang] || 'zh_CN';
+    var vditorI18n = (window.mdVditorI18n && window.mdVditorI18n[mdI18n.lang]) || null;
+    var vditorOptions = {
       cdn: new URL('vendor/vditor', document.baseURI).href.replace(/\/$/, ''),
       mode: 'ir',
-      lang: mdI18n.lang === 'zh-CN' ? 'zh_CN' : 'en_US',
+      lang: vditorLang,
+      rtl: mdI18n.isRTL(),
       value: initialValue,
       placeholder: mdI18n.t('placeholder'),
       height: '100vh',
@@ -1145,7 +1153,7 @@
           tip: mdI18n.t('toolbar.lang'),
           icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
           click: function () {
-            switchLanguage(mdI18n.lang === 'zh-CN' ? 'en-US' : 'zh-CN');
+            switchLanguage(nextLang());
           }
         },
         'help'
@@ -1195,6 +1203,12 @@
         updateEmptyState();
         renderStatusBar();
         mdI18n.applyI18n();
+        var langButton = vditor && vditor.vditor && vditor.vditor.toolbar &&
+          vditor.vditor.toolbar.elements && vditor.vditor.toolbar.elements.lang;
+        if (langButton && langButton.children[0]) {
+          langButton.children[0].title = LANG_LABELS[vditorLang] || mdI18n.lang;
+          langButton.children[0].setAttribute('aria-label', LANG_LABELS[vditorLang] || mdI18n.lang);
+        }
         var chromeObserver = new MutationObserver(function () {
           renderModeLang();
           updateStatusVisibility();
@@ -1267,7 +1281,16 @@
         });
         observer.observe(document.getElementById('vditor'), { childList: true, subtree: true });
       }
-    });
+    };
+    if (vditorI18n) {
+      vditorOptions.i18n = vditorI18n;
+    }
+    return new Vditor('vditor', vditorOptions);
+  }
+
+  function nextLang() {
+    var index = LANG_CYCLE.indexOf(mdI18n.lang);
+    return LANG_CYCLE[(index + 1) % LANG_CYCLE.length];
   }
 
   function switchLanguage(next) {
