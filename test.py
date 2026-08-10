@@ -233,7 +233,6 @@ def validate():
     else:
         errors.append("css/style.css not found")
 
-<<<<<<< HEAD
     # ---- 6. _headers CSP & caching ----
     print(f"\n{'[6] _headers':<30}")
     headers_path = ROOT / "_headers"
