@@ -202,7 +202,33 @@ def validate():
     else:
         errors.append("css/style.css not found")
 
-    # ---- 6. DOM structure analysis (static) ----
+    # ---- 6. _headers CSP & caching ----
+    print(f"\n{'[6] _headers':<30}")
+    headers_path = ROOT / "_headers"
+    if headers_path.exists():
+        headers = headers_path.read_text(encoding="utf-8")
+        headers_required = {
+            "frame-ancestors 'self'": r"frame-ancestors 'self'",
+            "X-Frame-Options: SAMEORIGIN": r"X-Frame-Options: SAMEORIGIN",
+            "frame-src 'self'": r"frame-src 'self'",
+            "connect-src 'self'": r"connect-src 'self'",
+            "upgrade-insecure-requests": r"upgrade-insecure-requests",
+            "clipboard-write=(self)": r"clipboard-write=\(self\)",
+            "web-share=(self)": r"web-share=\(self\)",
+            "/sw.js block": r"^/sw\.js$",
+            "/sw.js no-cache": r"Cache-Control: no-cache",
+        }
+        for label, pattern in headers_required.items():
+            if re.search(pattern, headers, re.MULTILINE):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"_headers: {label}")
+    else:
+        print(f"  {red(chr(0x2717))} _headers MISSING")
+        errors.append("Missing file: _headers")
+
+    # ---- 7. DOM structure analysis (static) ----
     print(f"\n{'[6] Editor initialization check':<30}")
     if js_path.exists():
         js = js_path.read_text(encoding="utf-8")
