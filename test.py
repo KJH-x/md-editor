@@ -266,6 +266,52 @@ def validate():
     else:
         errors.append("js/i18n/index.js not found")
 
+    # ---- 8. PWA manifest & icons ----
+    print(f"\n{'[8] PWA manifest & icons':<30}")
+    manifest_path = ROOT / "manifest.webmanifest"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            print(f"  {green(chr(0x2713))} manifest.webmanifest parses as JSON")
+        except json.JSONDecodeError as e:
+            errors.append(f"PWA: manifest.webmanifest invalid JSON ({e})")
+            manifest = None
+        if manifest is not None:
+            if manifest.get("display") == "standalone":
+                print(f"  {green(chr(0x2713))} display: standalone")
+            else:
+                errors.append("PWA: display is not 'standalone'")
+                print(f"  {red(chr(0x2717))} display is not 'standalone'")
+            icons = manifest.get("icons", [])
+            for ico in icons:
+                p = ROOT / ico["src"].lstrip("/")
+                if p.exists():
+                    print(f"  {green(chr(0x2713))} icon {ico['src']}")
+                else:
+                    errors.append(f"PWA: icon missing {ico['src']}")
+                    print(f"  {red(chr(0x2717))} icon {ico['src']} MISSING")
+            try:
+                import PIL.Image
+                pil_ok = True
+            except ImportError:
+                pil_ok = False
+            if pil_ok:
+                for ico in icons:
+                    p = ROOT / ico["src"].lstrip("/")
+                    if p.exists():
+                        w, h = PIL.Image.open(p).size
+                        expected = tuple(int(v) for v in ico["sizes"].split("x"))
+                        if (w, h) == expected:
+                            print(f"  {green(chr(0x2713))} {ico['src']} {w}x{h}")
+                        else:
+                            errors.append(f"PWA: {ico['src']} is {w}x{h}, expected {expected}")
+                            print(f"  {red(chr(0x2717))} {ico['src']} {w}x{h} != {expected}")
+            else:
+                print(f"  {yellow('!')} PIL unavailable; icon dimensions not verified")
+    else:
+        errors.append("manifest.webmanifest not found")
+        print(f"  {red(chr(0x2717))} manifest.webmanifest MISSING")
+
     # ---- Summary ----
     print(f"\n{'=' * 56}")
     if errors:
