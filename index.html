@@ -13,6 +13,16 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <div id="empty-state" hidden>
+    <h2>开始写作</h2>
+    <p class="empty-state__hint">选择一个模板快速开始，或直接输入内容。</p>
+    <ul class="empty-state__templates">
+      <li><a href="#">README</a></li>
+      <li><a href="#">会议记录</a></li>
+      <li><a href="#">待办清单</a></li>
+    </ul>
+    <p class="empty-state__shortcuts"><kbd>Alt+Ctrl+7</kbd> WYSIWYG · <kbd>Alt+Ctrl+8</kbd> IR · <kbd>Alt+Ctrl+9</kbd> SV</p>
+  </div>
   <div id="vditor"></div>
   <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
   <div class="editor-brand">md-editor · Powered by Vditor</div>
