@@ -53,6 +53,8 @@ JS_REQUIRED_PATTERNS = {
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
     "md-pagewidth localStorage": r"md-pagewidth",
+    "MDModal confirm": r"MDModal\.confirm",
+    "MDModal prompt": r"MDModal\.prompt",
     "file-io sanitize": r"sanitizeFilename",
     "file-io decode": r"decodeFile",
 }
