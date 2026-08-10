@@ -131,7 +131,7 @@
   }
 
   function renderCounts() {
-    if (!editorReady || !vditor || !statusbarCounts) return;
+    if (!editorReady || !vditor || !vditor.vditor || !statusbarCounts) return;
     var stats = computeStats(vditor.getValue());
     setTextContent(statusbarCounts, mdI18n.t('statusbar.counts')
       .replace('{chars}', stats.chars).replace('{words}', stats.words));
@@ -950,7 +950,6 @@
     applyTheme(theme);
     applyPageWidth(pageWidth);
     saveStateMessage = '';
-    renderStatusBar();
     log('i18n', 'Language switched to ' + next, { mode: currentMode });
   }
 
