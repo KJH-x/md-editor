@@ -141,6 +141,17 @@
     'find.replaceAll': "استبدال الكل",
     'find.case': "حساس لحالة الأحرف",
     'find.next': "التالي",
-    'find.prev': "السابق"
+    'find.prev': "السابق",
+    'export.title': "تصدير",
+    'export.copyHtml': "نسخ كـ HTML",
+    'export.copyHtmlDone': "تم نسخ HTML إلى الحافظة",
+    'export.printPdf': "طباعة / PDF",
+    'export.share': "مشاركة",
+    'export.shareFallback': "تعذّر المشاركة؛ تم تنزيل الملف",
+    'export.download': "تنزيل Markdown",
+    'fsa.savedFile': "تم الحفظ في الملف",
+    'fsa.reconnect': "إعادة الاتصال بالملف",
+    'fsa.needsGesture': "يلزم إجراء مستخدم للحفظ",
+    'fsa.unsupported': "الحفظ في الملف غير مدعوم؛ تم التنزيل"
   };
 })();

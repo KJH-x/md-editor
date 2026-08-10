@@ -141,6 +141,17 @@
     'find.replaceAll': "Reemplazar todo",
     'find.case': "Distinguir mayúsculas",
     'find.next': "Siguiente",
-    'find.prev': "Anterior"
+    'find.prev': "Anterior",
+    'export.title': "Exportar",
+    'export.copyHtml': "Copiar como HTML",
+    'export.copyHtmlDone': "HTML copiado al portapapeles",
+    'export.printPdf': "Imprimir / PDF",
+    'export.share': "Compartir",
+    'export.shareFallback': "No se pudo compartir; se descargó el archivo",
+    'export.download': "Descargar Markdown",
+    'fsa.savedFile': "Guardado en el archivo",
+    'fsa.reconnect': "Archivo reconectado",
+    'fsa.needsGesture': "Acción del usuario requerida para guardar",
+    'fsa.unsupported': "Guardado en archivo no compatible; se descargó"
   };
 })();

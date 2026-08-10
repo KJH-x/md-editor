@@ -141,6 +141,17 @@
     'find.replaceAll': "सभी बदलें",
     'find.case': "केस संवेदी",
     'find.next': "अगला",
-    'find.prev': "पिछला"
+    'find.prev': "पिछला",
+    'export.title': "निर्यात",
+    'export.copyHtml': "HTML के रूप में कॉपी करें",
+    'export.copyHtmlDone': "HTML क्लिपबोर्ड पर कॉपी हो गया",
+    'export.printPdf': "प्रिंट / PDF",
+    'export.share': "साझा करें",
+    'export.shareFallback': "साझा नहीं किया जा सका; फ़ाइल डाउनलोड हुई",
+    'export.download': "मार्कडाउन डाउनलोड करें",
+    'fsa.savedFile': "फ़ाइल में सहेजा गया",
+    'fsa.reconnect': "फ़ाइल पुनः जुड़ी",
+    'fsa.needsGesture': "सहेजने के लिए उपयोगकर्ता क्रिया आवश्यक",
+    'fsa.unsupported': "फ़ाइल सहेजना समर्थित नहीं; डाउनलोड हुआ"
   };
 })();
