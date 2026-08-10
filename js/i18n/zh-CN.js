@@ -96,6 +96,16 @@
     'action.mode.sv': '切换到 SV 分屏预览模式',
     'action.theme.cycle': '循环切换主题（浅色 / 深色 / 跟随系统）',
     'action.lang.switch': '切换语言',
-    'action.findReplace': '查找与替换'
+    'action.findReplace': '查找与替换',
+    'action.palette': '打开命令面板',
+    'palette.title': '命令面板',
+    'palette.placeholder': '搜索操作…',
+    'palette.noResults': '未找到匹配的操作',
+    'palette.cat.insert': '插入',
+    'palette.cat.format': '格式',
+    'palette.cat.view': '视图',
+    'palette.cat.file': '文件',
+    'palette.cat.settings': '设置',
+    'palette.cat.app': '应用'
   };
 })();
