@@ -155,7 +155,21 @@
     'fsa.unsupported': "Guardado en archivo no compatible; se descargó",
     'a11y.upload': "Subir imagen",
     'a11y.editorLabel': "Editor",
-    'a11y.hintMenu': "Menú de inserción"
+    'a11y.hintMenu': "Menú de inserción",
+    'shell.newTab': "Nueva pestaña",
+    'shell.newDoc': "Nuevo documento",
+    'shell.closeTab': "Cerrar pestaña",
+    'shell.nextTab': "Pestaña siguiente",
+    'shell.export': "Exportar todos los documentos (JSON)",
+    'shell.exportDone': "Todos los documentos exportados",
+    'shell.openFile': "Abrir archivo en la pestaña actual",
+    'shell.pagewidth': "Establecer ancho de página",
+    'statusbar.docs': "{n} documentos",
+    'statusbar.shellHint': "Ctrl+T nueva · Ctrl+W cerrar · Ctrl+S guardar",
+    'overlay.s.newTab': "Nueva pestaña (Ctrl+T)",
+    'overlay.s.closeTab': "Cerrar pestaña actual (Ctrl+W)",
+    'overlay.s.nextTab': "Cambiar a la pestaña siguiente (Ctrl+Tab)",
+    'overlay.s.palette': "Abrir la paleta de comandos (Ctrl+K)"
   };
 })();
 

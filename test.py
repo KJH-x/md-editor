@@ -23,11 +23,14 @@ REQUIRED_FILES = [
     "vditor-shell.html",
     "css/style.css",
     "js/editor.js",
+    "js/shell.js",
     "js/file-io.js",
     "js/fsa.js",
     "js/tab-store.js",
     "js/actions.js",
     "js/ui/find-replace.js",
+    "vendor/dockview/index.mjs",
+    "vendor/dockview/dockview.css",
     "LICENSE",
     "README.md",
     ".gitignore",
@@ -110,6 +113,29 @@ TAB_STORE_REQUIRED_PATTERNS = {
     "use strict": r"'use strict'",
 }
 
+SHELL_JS_REQUIRED_PATTERNS = {
+    "Dockview import": r"DockviewComponent",
+    "Dockview instantiation": r"new\s+DockviewComponent",
+    "addPanel API": r"\.addPanel\(",
+    "component name": r"'vditor-tab'",
+    "iframe host": r"vditor-shell\.html",
+    "sandbox flags": r"allow-scripts allow-same-origin",
+    "postMessage router": r"postMessage",
+    "message origin check": r"event\.origin\s*!==\s*window\.location\.origin",
+    "MDStore.listDocs": r"MDStore\.listDocs",
+    "MDStore.putDoc": r"MDStore\.putDoc",
+    "layout key": r"md-editor-layout",
+    "layout restore": r"fromJSON",
+    "layout serialization": r"toJSON",
+    "setTheme broadcast": r"setTheme",
+    "setLang broadcast": r"setLang",
+    "setPageWidth broadcast": r"setPageWidth",
+    "new tab shortcut": r"Ctrl\+T",
+    "close tab shortcut": r"Ctrl\+W",
+    "save active": r"saveActiveTab",
+    "dirty badge": r"setTitle\(\(dirty"
+}
+
 def green(s):
     return f"\033[32m{s}\033[0m"
 
@@ -166,11 +192,24 @@ def validate():
                     print(f"  {red(chr(0x2717))} {html_path}: {ref} NOT FOUND")
                     errors.append(f"Reference not found: {ref} ({html_path})")
 
-        if 'id="vditor"' not in html:
-            errors.append(f"Missing #vditor container element ({html_path})")
-            print(f"  {red(chr(0x2717))} {html_path}: #vditor container MISSING")
+        if html_path == "vditor-shell.html":
+            if 'id="vditor"' not in html:
+                errors.append(f"Missing #vditor container element ({html_path})")
+                print(f"  {red(chr(0x2717))} {html_path}: #vditor container MISSING")
+            else:
+                print(f"  {green(chr(0x2713))} {html_path}: #vditor container found")
         else:
-            print(f"  {green(chr(0x2713))} {html_path}: #vditor container found")
+            shell_checks = [
+                ("dockview container", 'id="dockview-container"'),
+                ("module shell.js", 'type="module" src="js/shell.js"'),
+                ("dockview css ref", 'href="vendor/dockview/dockview.css"'),
+            ]
+            for label, pattern in shell_checks:
+                if pattern in html:
+                    print(f"  {green(chr(0x2713))} {html_path}: {label} found")
+                else:
+                    print(f"  {red(chr(0x2717))} {html_path}: {label} MISSING")
+                    errors.append(f"Missing {label} ({html_path})")
 
         if 'file-io.js' in html:
             if (ROOT / "js/file-io.js").exists():
@@ -225,6 +264,37 @@ def validate():
     else:
         print(f"  {red(chr(0x2717))} js/tab-store.js MISSING")
         errors.append("js/tab-store.js not found")
+
+    # ---- 5b. Shell module validation ----
+    print(f"\n{'[5b] Shell module (js/shell.js)':<30}")
+    shell_path = ROOT / "js/shell.js"
+    if shell_path.exists():
+        shell = shell_path.read_text(encoding="utf-8")
+        for label, pattern in SHELL_JS_REQUIRED_PATTERNS.items():
+            if re.search(pattern, shell):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"ShellJS: {label}")
+        try:
+            shell_node = subprocess.run(
+                ["node", "--input-type=module", "--check"],
+                input=shell,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except (FileNotFoundError, OSError):
+            print("  node not found; skipped ESM syntax check")
+            shell_node = None
+        if shell_node is not None and shell_node.returncode == 0:
+            print(f"  {green(chr(0x2713))} ESM syntax (node --check)")
+        elif shell_node is not None:
+            print(f"  {red(chr(0x2717))} ESM syntax")
+            errors.append(shell_node.stderr.strip() or "shell.js ESM syntax check failed")
+    else:
+        print(f"  {red(chr(0x2717))} js/shell.js MISSING")
+        errors.append("js/shell.js not found")
 
     # ---- 6. CSS code validation ----
     print(f"\n{'[6] CSS structure':<30}")
