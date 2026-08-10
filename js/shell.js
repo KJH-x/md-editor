@@ -792,6 +792,12 @@ function bindSystemTheme() {
   else if (darkMedia.addListener) darkMedia.addListener(onChange);
 }
 
+function bindSwUpdate() {
+  window.addEventListener('md-sw-update', function () {
+    showStatus(mdI18n.t('sw.updateReady'));
+  });
+}
+
 function boot() {
   initDockview();
 
@@ -819,6 +825,7 @@ function boot() {
   registerActions();
   bindShortcuts();
   bindSystemTheme();
+  bindSwUpdate();
   applyShellTheme(theme);
   mdI18n.applyI18n();
 }

@@ -169,7 +169,8 @@
     'overlay.s.newTab': "नया टैब (Ctrl+T)",
     'overlay.s.closeTab': "वर्तमान टैब बंद करें (Ctrl+W)",
     'overlay.s.nextTab': "अगले टैब पर जाएँ (Ctrl+Tab)",
-    'overlay.s.palette': "कमांड पैलेट खोलें (Ctrl+K)"
+    'overlay.s.palette': "कमांड पैलेट खोलें (Ctrl+K)",
+    'sw.updateReady': "नया संस्करण तैयार है - अपडेट करने के लिए रीफ़्रेश करें"
   };
 })();
 

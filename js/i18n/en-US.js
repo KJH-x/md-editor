@@ -169,6 +169,7 @@
     'overlay.s.newTab': 'New tab (Ctrl+T)',
     'overlay.s.closeTab': 'Close current tab (Ctrl+W)',
     'overlay.s.nextTab': 'Switch to next tab (Ctrl+Tab)',
-    'overlay.s.palette': 'Open command palette (Ctrl+K)'
+    'overlay.s.palette': 'Open command palette (Ctrl+K)',
+    'sw.updateReady': 'New version ready - refresh to update'
   };
 })();
