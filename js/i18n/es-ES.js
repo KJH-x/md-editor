@@ -169,7 +169,8 @@
     'overlay.s.newTab': "Nueva pestaña (Ctrl+T)",
     'overlay.s.closeTab': "Cerrar pestaña actual (Ctrl+W)",
     'overlay.s.nextTab': "Cambiar a la pestaña siguiente (Ctrl+Tab)",
-    'overlay.s.palette': "Abrir la paleta de comandos (Ctrl+K)"
+    'overlay.s.palette': "Abrir la paleta de comandos (Ctrl+K)",
+    'sw.updateReady': "Nueva versión lista - recarga para actualizar"
   };
 })();
 

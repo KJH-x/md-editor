@@ -169,6 +169,7 @@
     'overlay.s.newTab': '新建标签页 (Ctrl+T)',
     'overlay.s.closeTab': '关闭当前标签页 (Ctrl+W)',
     'overlay.s.nextTab': '切换到下一个标签页 (Ctrl+Tab)',
-    'overlay.s.palette': '打开命令面板 (Ctrl+K)'
+    'overlay.s.palette': '打开命令面板 (Ctrl+K)',
+    'sw.updateReady': '新版本已就绪，刷新以更新'
   };
 })();

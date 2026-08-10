@@ -169,7 +169,8 @@
     'overlay.s.newTab': "تبويب جديد (Ctrl+T)",
     'overlay.s.closeTab': "إغلاق التبويب الحالي (Ctrl+W)",
     'overlay.s.nextTab': "الانتقال إلى التبويب التالي (Ctrl+Tab)",
-    'overlay.s.palette': "فتح لوحة الأوامر (Ctrl+K)"
+    'overlay.s.palette': "فتح لوحة الأوامر (Ctrl+K)",
+    'sw.updateReady': "نسخة جديدة جاهزة - حدّث الصفحة للتحديث"
   };
 })();
 

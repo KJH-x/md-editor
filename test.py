@@ -29,6 +29,8 @@ REQUIRED_FILES = [
     "js/tab-store.js",
     "js/actions.js",
     "js/ui/find-replace.js",
+    "sw.js",
+    "js/sw-register.js",
     "vendor/dockview/index.mjs",
     "vendor/dockview/dockview.css",
     "LICENSE",
@@ -133,7 +135,35 @@ SHELL_JS_REQUIRED_PATTERNS = {
     "new tab shortcut": r"Ctrl\+T",
     "close tab shortcut": r"Ctrl\+W",
     "save active": r"saveActiveTab",
-    "dirty badge": r"setTitle\(\(dirty"
+    "dirty badge": r"setTitle\(\(dirty",
+}
+
+SW_REQUIRED_PATTERNS = {
+    "version constant": r"const\s+VER\s*=\s*\d+",
+    "shell cache name": r"md-shell-v",
+    "runtime cache name": r"md-runtime-v",
+    "precache list": r"(?i)precache",
+    "allSettled install": r"Promise\.allSettled",
+    "skipWaiting": r"skipWaiting",
+    "clients.claim": r"clients\.claim",
+    "navigate network-first": r"mode\s*===\s*'navigate'",
+    "vendor cache-first": r"/vendor/",
+}
+
+SW_REGISTER_REQUIRED_PATTERNS = {
+    "serviceWorker guard": r"'serviceWorker' in navigator",
+    "register /sw.js": r"register\('/sw\.js'",
+    "scope /": r"scope\s*:\s*'/'",
+    "controllerchange": r"controllerchange",
+    "md-sw-update dispatch": r"md-sw-update",
+    "IIFE wrapper": r"\(function\s*\(\)",
+    "use strict": r"'use strict'",
+}
+
+SHELL_SW_REQUIRED_PATTERNS = {
+    "md-sw-update listener": r"md-sw-update",
+    "updateReady i18n": r"sw\.updateReady",
+    "statusbar toast": r"showStatus",
 }
 
 def green(s):
@@ -276,6 +306,12 @@ def validate():
             else:
                 print(f"  {red(chr(0x2717))} {label} MISSING")
                 errors.append(f"ShellJS: {label}")
+        for label, pattern in SHELL_SW_REQUIRED_PATTERNS.items():
+            if re.search(pattern, shell):
+                print(f"  {green(chr(0x2713))} SW toast: {label}")
+            else:
+                print(f"  {red(chr(0x2717))} SW toast: {label} MISSING")
+                errors.append(f"ShellJS SW toast: {label}")
         try:
             shell_node = subprocess.run(
                 ["node", "--input-type=module", "--check"],
@@ -295,6 +331,87 @@ def validate():
     else:
         print(f"  {red(chr(0x2717))} js/shell.js MISSING")
         errors.append("js/shell.js not found")
+
+    # ---- 5c. Service worker (sw.js) ----
+    print(f"\n{'[5c] Service worker (sw.js)':<30}")
+    sw_path = ROOT / "sw.js"
+    if sw_path.exists():
+        sw = sw_path.read_text(encoding="utf-8")
+        for label, pattern in SW_REQUIRED_PATTERNS.items():
+            if re.search(pattern, sw):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"SW: {label}")
+        if re.search(r"\bimport\b", sw):
+            print(f"  {red(chr(0x2717))} sw.js must not use import")
+            errors.append("SW: sw.js must not use import")
+        else:
+            print(f"  {green(chr(0x2713))} no ESM import")
+        precache_section = re.search(r"const\s+PRECACHE\s*=\s*\[(.*?)\]", sw, re.S)
+        if precache_section:
+            paths = re.findall(r"['\"]([^'\"]+)['\"]", precache_section.group(1))
+            if not paths:
+                print(f"  {red(chr(0x2717))} precache list is empty")
+                errors.append("SW: precache list is empty")
+            for p in paths:
+                rel = p.lstrip("/")
+                if (ROOT / rel).exists():
+                    print(f"  {green(chr(0x2713))} precache: {p}")
+                else:
+                    print(f"  {red(chr(0x2717))} precache: {p} MISSING")
+                    errors.append(f"SW: precache path not found on disk: {p}")
+        else:
+            print(f"  {red(chr(0x2717))} PRECACHE array not found")
+            errors.append("SW: PRECACHE array not found")
+        try:
+            sw_node = subprocess.run(
+                ["node", "--check", str(sw_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except (FileNotFoundError, OSError):
+            print("  node not found; skipped JavaScript syntax check")
+            sw_node = None
+        if sw_node is not None and sw_node.returncode == 0:
+            print(f"  {green(chr(0x2713))} JavaScript syntax")
+        elif sw_node is not None:
+            print(f"  {red(chr(0x2717))} JavaScript syntax")
+            errors.append(sw_node.stderr.strip() or "sw.js JavaScript syntax check failed")
+    else:
+        print(f"  {red(chr(0x2717))} sw.js MISSING")
+        errors.append("sw.js not found")
+
+    # ---- 5d. SW registration (js/sw-register.js) ----
+    print(f"\n{'[5d] SW registration (js/sw-register.js)':<30}")
+    swr_path = ROOT / "js/sw-register.js"
+    if swr_path.exists():
+        swr = swr_path.read_text(encoding="utf-8")
+        for label, pattern in SW_REGISTER_REQUIRED_PATTERNS.items():
+            if re.search(pattern, swr):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"SWRegister: {label}")
+        try:
+            swr_node = subprocess.run(
+                ["node", "--check", str(swr_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except (FileNotFoundError, OSError):
+            print("  node not found; skipped JavaScript syntax check")
+            swr_node = None
+        if swr_node is not None and swr_node.returncode == 0:
+            print(f"  {green(chr(0x2713))} JavaScript syntax")
+        elif swr_node is not None:
+            print(f"  {red(chr(0x2717))} JavaScript syntax")
+            errors.append(swr_node.stderr.strip() or "js/sw-register.js JavaScript syntax check failed")
+    else:
+        print(f"  {red(chr(0x2717))} js/sw-register.js MISSING")
+        errors.append("js/sw-register.js not found")
 
     # ---- 6. CSS code validation ----
     print(f"\n{'[6] CSS structure':<30}")
