@@ -19,6 +19,17 @@
   var userEdited = false;
   var restoringDraft = false;
   var vditor = null;
+  var retrying = false;
+  var lastFlushAt = 0;
+  var draftChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('md-editor-docs') : null;
+  if (draftChannel) {
+    draftChannel.onmessage = function (event) {
+      if (event.data && event.data.type === 'saved') {
+        setSaveStatus('草稿已在其他标签页更新', true);
+        log('storage', 'Draft updated in another tab');
+      }
+    };
+  }
   var THEME_KEY = 'md-theme';
   var theme = safeStorageGet(THEME_KEY) ||
     (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') || 'light';
@@ -155,7 +166,7 @@
     });
   }
 
-  function writeDraft(markdown) {
+  function writeDraftImpl(markdown) {
     return openDatabase().then(function (database) {
       return new Promise(function (resolve, reject) {
         var transaction = database.transaction(DRAFT_STORE, 'readwrite');
@@ -175,18 +186,66 @@
     });
   }
 
+  function writeDraft(markdown) {
+    if (navigator.locks && navigator.locks.request) {
+      return navigator.locks.request('md-editor-draft', { mode: 'exclusive' }, function () {
+        try {
+          return writeDraftImpl(markdown);
+        } catch (err) {
+          log('storage', 'Locked draft write failed', err);
+          throw err;
+        }
+      });
+    }
+    return writeDraftImpl(markdown);
+  }
+
+  function notifyDraftSaved() {
+    if (!draftChannel) return;
+    try {
+      draftChannel.postMessage({ type: 'saved', updatedAt: Date.now() });
+    } catch (err) {
+      log('storage', 'Broadcast saved notification failed', err);
+    }
+  }
+
+  function failSave(markdown, err) {
+    safeStorageSet('md-editor-fallback', markdown);
+    setSaveStatus('草稿保存失败，请立即下载备份', true);
+    log('storage', 'Draft save failed', err);
+    return false;
+  }
+
   function saveDraftNow(markdown) {
     clearTimeout(saveTimer);
     saveTimer = null;
     return writeDraft(markdown).then(function () {
+      retrying = false;
+      safeStorageRemove('md-editor-fallback');
       setSaveStatus('草稿已保存', false);
       log('storage', 'Draft saved', { length: markdown.length });
+      notifyDraftSaved();
       return true;
     }).catch(function (err) {
-      setSaveStatus('草稿保存失败，请立即下载备份', true);
-      log('storage', 'Draft save failed', err);
-      return false;
+      if (retrying) {
+        retrying = false;
+        return failSave(markdown, err);
+      }
+      retrying = true;
+      return new Promise(function (resolve) {
+        setTimeout(function () { resolve(saveDraftNow(markdown)); }, 500);
+      });
     });
+  }
+
+  function flushDraft() {
+    if (!editorReady || !userEdited) return;
+    var now = Date.now();
+    if (now - lastFlushAt < 100) return;
+    lastFlushAt = now;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    saveDraftNow(vditor.getValue());
   }
 
   function scheduleDraftSave(markdown) {
@@ -514,14 +573,19 @@
       draftPromise.then(function (draft) {
         if (userEdited) return;
         var legacyDraft = safeStorageGet('md-editor');
-        var markdown = draft && typeof draft.markdown === 'string' ? draft.markdown : legacyDraft;
+        var fallbackDraft = safeStorageGet('md-editor-fallback');
+        var markdown = draft && typeof draft.markdown === 'string' ? draft.markdown
+          : (fallbackDraft || legacyDraft);
         if (!markdown) return;
         restoringDraft = true;
         vditor.setValue(markdown, true);
         restoringDraft = false;
-        if (!draft && legacyDraft) {
-          saveDraftNow(legacyDraft).then(function (saved) {
-            if (saved) safeStorageRemove('md-editor');
+        if (!draft) {
+          saveDraftNow(markdown).then(function (saved) {
+            if (saved) {
+              safeStorageRemove('md-editor-fallback');
+              safeStorageRemove('md-editor');
+            }
           });
         }
       });
@@ -541,9 +605,11 @@
     applyPageWidth(pageWidth);
   });
 
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') flushDraft();
+  });
+
   window.addEventListener('pagehide', function () {
-    if (!editorReady) return;
-    clearTimeout(saveTimer);
-    saveDraftNow(vditor.getValue());
+    flushDraft();
   });
 })();
