@@ -7,56 +7,59 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#161b22" media="(prefers-color-scheme: dark)">
-  <title>md-editor — Markdown Editor</title>
+  <title data-i18n="app.title">md-editor — Markdown Editor</title>
   <link rel="icon" href="vendor/vditor/dist/images/logo.png" type="image/png">
   <link rel="stylesheet" href="vendor/vditor/dist/index.css" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="empty-state" hidden>
-    <h2>开始写作</h2>
-    <p class="empty-state__hint">选择一个模板快速开始，或直接输入内容。</p>
+    <h2 data-i18n="empty.title">开始写作</h2>
+    <p class="empty-state__hint" data-i18n="empty.hint">选择一个模板快速开始，或直接输入内容。</p>
     <ul class="empty-state__templates">
       <li><a href="#">README</a></li>
-      <li><a href="#">会议记录</a></li>
-      <li><a href="#">待办清单</a></li>
+      <li><a href="#" data-i18n="empty.template.meeting">会议记录</a></li>
+      <li><a href="#" data-i18n="empty.template.todo">待办清单</a></li>
     </ul>
     <p class="empty-state__shortcuts"><kbd>Alt+Ctrl+7</kbd> WYSIWYG · <kbd>Alt+Ctrl+8</kbd> IR · <kbd>Alt+Ctrl+9</kbd> SV</p>
   </div>
   <div id="vditor"></div>
   <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
-  <div class="editor-brand">md-editor · Powered by Vditor</div>
+  <div class="editor-brand" data-i18n="brand">md-editor · Powered by Vditor</div>
   <div id="shortcut-overlay" hidden role="dialog" aria-modal="true" aria-label="快捷键">
     <div class="shortcut-overlay__backdrop"></div>
     <div class="shortcut-overlay__panel" tabindex="-1">
-      <h2 class="shortcut-overlay__title">快捷键</h2>
+      <h2 class="shortcut-overlay__title" data-i18n="overlay.title">快捷键</h2>
       <table class="shortcut-overlay__table">
         <tbody>
-          <tr><td><kbd>⌘S</kbd></td><td>保存草稿并下载 Markdown 文件</td></tr>
-          <tr><td><kbd>⇧⌘S</kbd></td><td>仅下载 Markdown 文件</td></tr>
-          <tr><td><kbd>⌘O</kbd></td><td>打开 Markdown 文件</td></tr>
-          <tr><td><kbd>⌘Enter</kbd></td><td>立即保存草稿</td></tr>
-          <tr><td><kbd>Alt+Ctrl+7</kbd></td><td>切换 WYSIWYG 模式</td></tr>
-          <tr><td><kbd>Alt+Ctrl+8</kbd></td><td>切换 IR 即时渲染模式</td></tr>
-          <tr><td><kbd>Alt+Ctrl+9</kbd></td><td>切换 SV 分屏预览模式</td></tr>
-          <tr><td><kbd>?</kbd></td><td>显示 / 隐藏本快捷键面板</td></tr>
-          <tr><td><kbd>Esc</kbd></td><td>关闭本快捷键面板</td></tr>
+          <tr><td><kbd>⌘S</kbd></td><td data-i18n="overlay.s.saveDraft">保存草稿并下载 Markdown 文件</td></tr>
+          <tr><td><kbd>⇧⌘S</kbd></td><td data-i18n="overlay.s.downloadOnly">仅下载 Markdown 文件</td></tr>
+          <tr><td><kbd>⌘O</kbd></td><td data-i18n="overlay.s.open">打开 Markdown 文件</td></tr>
+          <tr><td><kbd>⌘Enter</kbd></td><td data-i18n="overlay.s.saveNow">立即保存草稿</td></tr>
+          <tr><td><kbd>Alt+Ctrl+7</kbd></td><td data-i18n="overlay.s.wysiwyg">切换 WYSIWYG 模式</td></tr>
+          <tr><td><kbd>Alt+Ctrl+8</kbd></td><td data-i18n="overlay.s.ir">切换 IR 即时渲染模式</td></tr>
+          <tr><td><kbd>Alt+Ctrl+9</kbd></td><td data-i18n="overlay.s.sv">切换 SV 分屏预览模式</td></tr>
+          <tr><td><kbd>?</kbd></td><td data-i18n="overlay.s.togglePanel">显示 / 隐藏本快捷键面板</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td data-i18n="overlay.s.closePanel">关闭本快捷键面板</td></tr>
         </tbody>
       </table>
-      <button type="button" class="shortcut-overlay__close">关闭</button>
+      <button type="button" class="shortcut-overlay__close" data-i18n="overlay.close">关闭</button>
     </div>
   </div>
-  <noscript>此编辑器需要启用 JavaScript。</noscript>
+  <noscript data-i18n="noscript">此编辑器需要启用 JavaScript。</noscript>
   <div id="statusbar" role="status" aria-live="polite">
     <span class="statusbar__seg" id="statusbar-save"><span class="statusbar__dot"></span><span class="statusbar__save-text"></span></span>
     <span class="statusbar__seg" id="statusbar-counts"></span>
     <span class="statusbar__seg" id="statusbar-reading"></span>
     <span class="statusbar__seg" id="statusbar-mode"></span>
     <span class="statusbar__seg" id="statusbar-lang"></span>
-    <span class="statusbar__seg statusbar__hint">Alt+Ctrl+7/8/9 切换模式</span>
+    <span class="statusbar__seg statusbar__hint" data-i18n="statusbar.hint">Alt+Ctrl+7/8/9 切换模式</span>
   </div>
   <script src="vendor/vditor/dist/js/icons/ant.js" id="vditorIconScript"></script>
   <script src="vendor/vditor/dist/index.min.js"></script>
+  <script src="js/i18n/zh-CN.js"></script>
+  <script src="js/i18n/en-US.js"></script>
+  <script src="js/i18n/index.js"></script>
   <script src="js/file-io.js"></script>
   <script src="js/editor.js"></script>
 </body>

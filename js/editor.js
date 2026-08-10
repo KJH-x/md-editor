@@ -42,7 +42,7 @@
   if (draftChannel) {
     draftChannel.onmessage = function (event) {
       if (event.data && event.data.type === 'saved') {
-        setSaveStatus('草稿已在其他标签页更新', true);
+        setSaveStatus(mdI18n.t('save.conflict'), true);
         log('storage', 'Draft updated in another tab');
       }
     };
@@ -77,7 +77,9 @@
     clearTimeout(saveStatusTimer);
     saveStatus.textContent = message;
     saveStatus.classList.toggle('is-error', !!isError);
-    saveStatus.classList.toggle('is-saving', !isError && /^正在/.test(message || ''));
+    var stateMissing = state === undefined || state === null;
+    var savingByRegex = !isError && stateMissing && /^正在/.test(message || '');
+    saveStatus.classList.toggle('is-saving', !isError && (state === 'saving' || savingByRegex));
     saveStateMessage = message || '';
     if (state === 'saving' || state === 'saved' || state === 'error' || state === 'idle') {
       saveState = state;
@@ -85,7 +87,7 @@
       saveState = 'error';
     } else if (!message) {
       saveState = 'idle';
-    } else if (/^正在/.test(message)) {
+    } else if (stateMissing && /^正在/.test(message)) {
       saveState = 'saving';
     } else {
       saveState = 'saved';
@@ -118,9 +120,9 @@
     if (!statusbarSave) return;
     var label = saveStateMessage;
     if (!label) {
-      if (saveState === 'saving') label = '正在保存';
-      else if (saveState === 'saved') label = '已保存';
-      else if (saveState === 'error') label = '保存出错';
+      if (saveState === 'saving') label = mdI18n.t('save.saving');
+      else if (saveState === 'saved') label = mdI18n.t('save.saved');
+      else if (saveState === 'error') label = mdI18n.t('save.error');
     }
     statusbarSave.setAttribute('data-state', saveState);
     if (statusbarSaveDot) statusbarSaveDot.className = 'statusbar__dot statusbar__dot--' + saveState;
@@ -131,8 +133,9 @@
   function renderCounts() {
     if (!editorReady || !vditor || !statusbarCounts) return;
     var stats = computeStats(vditor.getValue());
-    setTextContent(statusbarCounts, '字数 ' + stats.chars + ' · 词数 ' + stats.words);
-    setTextContent(statusbarReading, '约 ' + stats.reading + ' 分钟');
+    setTextContent(statusbarCounts, mdI18n.t('statusbar.counts')
+      .replace('{chars}', stats.chars).replace('{words}', stats.words));
+    setTextContent(statusbarReading, mdI18n.t('statusbar.reading').replace('{minutes}', stats.reading));
   }
 
   function renderModeLang() {
@@ -183,7 +186,7 @@
       window.localStorage.setItem(key, value);
       return true;
     } catch (err) {
-      setSaveStatus('设置无法保存到浏览器', true, 'error');
+      setSaveStatus(mdI18n.t('settings.notSaved'), true, 'error');
       log('storage', 'localStorage write failed', err);
       return false;
     }
@@ -207,10 +210,10 @@
     dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
   };
 
-  var THEME_LABELS = {
-    light: '浅色主题',
-    dark: '深色主题',
-    auto: '跟随系统主题'
+  var THEME_LABEL_KEYS = {
+    light: 'theme.light',
+    dark: 'theme.dark',
+    auto: 'theme.auto'
   };
 
   var CONTENT_THEME_PATH = new URL('vendor/vditor/dist/css/content-theme', document.baseURI).href.replace(/\/$/, '');
@@ -219,7 +222,7 @@
     var btn = document.querySelector('.vditor-toolbar button[data-type="theme"]');
     if (!btn) return;
     btn.innerHTML = THEME_ICONS[theme] || THEME_ICONS.light;
-    btn.title = THEME_LABELS[theme] || THEME_LABELS.light;
+    btn.title = mdI18n.t(THEME_LABEL_KEYS[theme] || 'theme.light');
   }
 
   function applyTheme(next) {
@@ -251,9 +254,12 @@
     }
   }
 
+  document.addEventListener('fullscreenchange', updateStatusVisibility);
+  document.addEventListener('webkitfullscreenchange', updateStatusVisibility);
+
   function openDatabase() {
     if (!('indexedDB' in window)) {
-      return Promise.reject(new Error('当前浏览器不支持本地草稿存储'));
+      return Promise.reject(new Error(mdI18n.t('storage.unsupported')));
     }
     if (databasePromise) return databasePromise;
 
@@ -273,11 +279,11 @@
       };
       request.onerror = function () {
         databasePromise = null;
-        reject(request.error || new Error('无法打开本地草稿数据库'));
+        reject(request.error || new Error(mdI18n.t('storage.openFailed')));
       };
       request.onblocked = function () {
         databasePromise = null;
-        reject(new Error('本地草稿数据库被其他页面占用'));
+        reject(new Error(mdI18n.t('storage.blocked')));
       };
     });
     return databasePromise;
@@ -290,7 +296,7 @@
           .objectStore(DRAFT_STORE).get(DRAFT_ID);
         request.onsuccess = function () { resolve(request.result || null); };
         request.onerror = function () {
-          reject(request.error || new Error('无法读取本地草稿'));
+          reject(request.error || new Error(mdI18n.t('storage.readFailed')));
         };
       });
     });
@@ -307,10 +313,10 @@
         });
         transaction.oncomplete = function () { resolve(); };
         transaction.onerror = function () {
-          reject(transaction.error || new Error('无法保存本地草稿'));
+          reject(transaction.error || new Error(mdI18n.t('storage.writeFailed')));
         };
         transaction.onabort = function () {
-          reject(transaction.error || new Error('本地草稿保存已中止'));
+          reject(transaction.error || new Error(mdI18n.t('storage.writeAborted')));
         };
       });
     });
@@ -341,7 +347,7 @@
 
   function failSave(markdown, err) {
     safeStorageSet('md-editor-fallback', markdown);
-    setSaveStatus('草稿保存失败，请立即下载备份', true, 'error');
+    setSaveStatus(mdI18n.t('save.fail'), true, 'error');
     log('storage', 'Draft save failed', err);
     return false;
   }
@@ -352,7 +358,7 @@
     return writeDraft(markdown).then(function () {
       retrying = false;
       safeStorageRemove('md-editor-fallback');
-      setSaveStatus('草稿已保存', false, 'saved');
+      setSaveStatus(mdI18n.t('save.saved'), false, 'saved');
       log('storage', 'Draft saved', { length: markdown.length });
       notifyDraftSaved();
       return true;
@@ -380,7 +386,7 @@
 
   function scheduleDraftSave(markdown) {
     clearTimeout(saveTimer);
-    setSaveStatus('正在保存...', false, 'saving');
+    setSaveStatus(mdI18n.t('save.saving'), false, 'saving');
     saveTimer = setTimeout(function () { saveDraftNow(markdown); }, SAVE_DELAY);
   }
 
@@ -411,7 +417,7 @@
 
   function openFile() {
     if (vditor.getValue().trim() &&
-        !confirm('当前编辑区有内容，打开新文件将替换全部内容，是否继续？')) {
+        !confirm(mdI18n.t('dialog.openConfirm'))) {
       return;
     }
     var input = document.createElement('input');
@@ -423,13 +429,14 @@
       file.arrayBuffer().then(function (buffer) {
         var decoded = mdFileIO.decodeFile(buffer);
         if (decoded.encoding !== 'utf-8') {
-          setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开', false, 'idle');
+          setSaveStatus(mdI18n.t('file.openedWith')
+            .replace('{encoding}', decoded.encoding.toUpperCase()), false, 'idle');
         }
         vditor.setValue(decoded.text, true);
         scheduleDraftSave(decoded.text);
         log('open', 'Loaded: ' + file.name + ' (' + decoded.encoding + ')');
       }).catch(function (err) {
-        setSaveStatus('文件读取失败：' + file.name, true);
+        setSaveStatus(mdI18n.t('file.readError').replace('{name}', file.name), true);
         log('open', 'File read failed', err);
       });
     });
@@ -439,7 +446,7 @@
   function saveFile(force) {
     var content = vditor.getValue();
     var match = content.match(/^#\s+(.+)$/m);
-    var baseName = match ? match[1].trim() : 'untitled';
+    var baseName = match ? match[1].trim() : mdI18n.t('untitled');
     var filename = mdFileIO.sanitizeFilename(baseName) + '.md';
     var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     var url = URL.createObjectURL(blob);
@@ -530,7 +537,7 @@
       };
       image.onerror = function () {
         URL.revokeObjectURL(objectUrl);
-        reject(new Error('无法读取图片：' + file.name));
+        reject(new Error(mdI18n.t('image.readError').replace('{name}', file.name)));
       };
       image.src = objectUrl;
     });
@@ -556,7 +563,7 @@
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
       reader.onload = function (event) { resolve(event.target.result); };
-      reader.onerror = function () { reject(new Error('无法读取图片：' + file.name)); };
+      reader.onerror = function () { reject(new Error(mdI18n.t('image.readError').replace('{name}', file.name))); };
       reader.readAsDataURL(file);
     });
   }
@@ -567,22 +574,22 @@
     canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
     canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
     var context = canvas.getContext('2d');
-    if (!context) throw new Error('浏览器无法压缩图片');
+    if (!context) throw new Error(mdI18n.t('image.compressError'));
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL('image/webp', quality);
   }
 
   function prepareImage(file) {
     if (!file.type || file.type.indexOf('image/') !== 0) {
-      return Promise.reject(new Error('仅支持图片文件'));
+      return Promise.reject(new Error(mdI18n.t('image.unsupportedType')));
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      return Promise.reject(new Error('图片不能超过 10 MB：' + file.name));
+      return Promise.reject(new Error(mdI18n.t('image.tooLarge').replace('{name}', file.name)));
     }
     if (file.type === 'image/gif') {
       return readFileAsDataUrl(file).then(function (dataUrl) {
         if (dataUrl.length > MAX_DATA_URL_LENGTH) {
-          throw new Error('GIF 动画无法压缩，且数据超过 3 MB 限制：' + file.name);
+          throw new Error(mdI18n.t('image.gifTooLarge').replace('{name}', file.name));
         }
         return dataUrl;
       });
@@ -599,7 +606,7 @@
         dataUrl = renderCompressedImage(image, attempts[i][0], attempts[i][1]);
         if (dataUrl.length <= MAX_DATA_URL_LENGTH) return dataUrl;
       }
-      throw new Error('图片压缩后仍然过大：' + file.name);
+      throw new Error(mdI18n.t('image.compressedTooLarge').replace('{name}', file.name));
     });
   }
 
@@ -620,7 +627,7 @@
         if (result.status === 'fulfilled') {
           successful.push(result.value);
         } else {
-          failed.push(result.reason && result.reason.message ? result.reason.message : String(result.reason || '未知错误'));
+          failed.push(result.reason && result.reason.message ? result.reason.message : String(result.reason || mdI18n.t('error.unknown')));
         }
       });
       if (successful.length) {
@@ -628,7 +635,7 @@
         scheduleDraftSave(vditor.getValue());
       }
       if (failed.length) {
-        var message = failed.join('；');
+        var message = failed.join(mdI18n.t('image.errorsJoin'));
         setSaveStatus(message, true, 'error');
         log('upload', 'Image insertion partial failure', failed);
         return message;
@@ -637,283 +644,319 @@
     });
   }
 
-  var defaultValue = [
-    '# md-editor',
-    '',
-    '基于 Vditor 的 Markdown 编辑器，支持三种编辑模式。',
-    '',
-    '## 快速上手',
-    '',
-    '- 当前为 **IR（即时渲染）模式**：左侧编辑 Markdown 源码，右侧实时预览',
-    '- 通过工具栏可切换 WYSIWYG / IR / SV 模式',
-    '- 支持拖拽或粘贴图片并压缩后嵌入文档',
-    '- 支持大纲导航、字数统计、代码高亮',
-    '',
-    '## 快捷键',
-    '',
-    '| 快捷键 | 功能 |',
-    '|--------|------|',
-    '| `Alt+Ctrl+7` | WYSIWYG 模式 |',
-    '| `Alt+Ctrl+8` | IR 即时渲染模式 |',
-    '| `Alt+Ctrl+9` | SV 分屏预览模式 |',
-    '',
-    '> 开始写作吧！'
-  ].join('\n');
+  function buildWelcomeDoc() {
+    return [
+      mdI18n.t('welcome.title'),
+      '',
+      mdI18n.t('welcome.intro'),
+      '',
+      mdI18n.t('welcome.quickstart'),
+      '',
+      mdI18n.t('welcome.irDesc'),
+      mdI18n.t('welcome.modeSwitch'),
+      mdI18n.t('welcome.images'),
+      mdI18n.t('welcome.features'),
+      '',
+      mdI18n.t('welcome.shortcutsTitle'),
+      '',
+      mdI18n.t('welcome.shortcutHeader'),
+      mdI18n.t('welcome.shortcutDivider'),
+      mdI18n.t('welcome.shortcutWysiwyg'),
+      mdI18n.t('welcome.shortcutIr'),
+      mdI18n.t('welcome.shortcutSv'),
+      '',
+      mdI18n.t('welcome.start')
+    ].join('\n');
+  }
+
+  var pendingRestoreValue = null;
 
   var draftPromise = readDraft().catch(function (err) {
-    setSaveStatus('本地草稿不可用，请使用下载保存', true, 'error');
+    setSaveStatus(mdI18n.t('storage.unavailable'), true, 'error');
     log('storage', 'Draft read failed', err);
     return null;
   });
 
+  function createVditor(initialValue) {
+    return new Vditor('vditor', {
+      cdn: new URL('vendor/vditor', document.baseURI).href.replace(/\/$/, ''),
+      mode: 'ir',
+      lang: mdI18n.lang === 'zh-CN' ? 'zh_CN' : 'en_US',
+      value: initialValue,
+      placeholder: mdI18n.t('placeholder'),
+      height: '100vh',
+      cache: { enable: false },
+      counter: { enable: true },
+      outline: { enable: true, position: 'left' },
+      tab: '\t',
+      typewriterMode: typewriterMode,
+      preview: {
+        maxWidth: 4096,
+        theme: { current: effectiveInit, list: {} },
+        hljs: { enable: true, style: 'github' },
+        markdown: {
+          autoSpace: true,
+          toc: true,
+          sanitize: true
+        },
+        math: {
+          engine: 'KaTeX',
+          inlineDigit: true,
+          macros: {}
+        },
+        transform: function (html) {
+          return transformCallouts(html);
+        }
+      },
+      toolbar: [
+        'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
+        'list', 'ordered-list', 'check',
+        { name: 'outdent', hotkey: '⇧Tab', tipPosition: 'n' },
+        'indent', '|',
+        'quote', 'line', 'code', 'inline-code', '|',
+        'upload', 'table',
+        {
+          name: 'diagram',
+          tip: mdI18n.t('toolbar.diagram'),
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+          toolbar: [
+            {
+              name: 'mermaid',
+              tip: 'Mermaid',
+              icon: 'Mermaid',
+              click: function () {
+                vditor.insertValue('```mermaid\ngraph TD\n  A-->B\n```\n', true);
+              }
+            },
+            {
+              name: 'echarts',
+              tip: 'ECharts',
+              icon: 'ECharts',
+              click: function () {
+                vditor.insertValue('```echarts\n{\n  "title": { "text": "' + mdI18n.t('diagram.sampleTitle') + '" },\n  "tooltip": {},\n  "xAxis": { "type": "category", "data": ["A", "B", "C"] },\n  "yAxis": { "type": "value" },\n  "series": [{ "type": "bar", "data": [5, 8, 3] }]\n}\n```\n', true);
+              }
+            },
+            {
+              name: 'mindmap',
+              tip: 'Mindmap',
+              icon: 'Mindmap',
+              click: function () {
+                vditor.insertValue('```mindmap\n' + mdI18n.t('diagram.mindmapTopic') + '\n' + mdI18n.t('diagram.mindmapL1') + '\n' + mdI18n.t('diagram.mindmapL2') + '\n```\n', true);
+              }
+            },
+            {
+              name: 'markmap',
+              tip: 'Markmap',
+              icon: 'Markmap',
+              click: function () {
+                vditor.insertValue('```markmap\n' + mdI18n.t('diagram.markmapTopic') + '\n' + mdI18n.t('diagram.markmapBranch') + '\n```\n', true);
+              }
+            },
+            {
+              name: 'flowchart',
+              tip: 'Flowchart',
+              icon: 'Flowchart',
+              click: function () {
+                vditor.insertValue('```flow\nst=>start: ' + mdI18n.t('diagram.flowStart') + '\ne=>end: ' + mdI18n.t('diagram.flowEnd') + '\nop=>operation: ' + mdI18n.t('diagram.flowOp') + '\ncond=>condition: ' + mdI18n.t('diagram.flowCond') + '\nst->op->cond\ncond(no)->op\ncond(yes)->e\n```\n', true);
+              }
+            },
+            {
+              name: 'graphviz',
+              tip: 'Graphviz',
+              icon: 'Graphviz',
+              click: function () {
+                vditor.insertValue('```graphviz\ndigraph G {\n  A -> B;\n  B -> C;\n}\n```\n', true);
+              }
+            },
+            {
+              name: 'plantuml',
+              tip: 'PlantUML',
+              icon: 'PlantUML',
+              click: function () {
+                vditor.insertValue('```plantuml\n@startuml\nAlice -> Bob: Hello\n@enduml\n```\n', true);
+              }
+            },
+            {
+              name: 'abc',
+              tip: 'ABC',
+              icon: 'ABC',
+              click: function () {
+                vditor.insertValue('```abc\nX:1\nT:' + mdI18n.t('diagram.abcTitle') + '\nM:4/4\nL:1/4\nK:C\nC D E F | G A B c |\n```\n', true);
+              }
+            },
+            {
+              name: 'smiles',
+              tip: 'SMILES',
+              icon: 'SMILES',
+              click: function () {
+                vditor.insertValue('```smiles\nC(C(=O)O)N\n```\n', true);
+              }
+            }
+          ]
+        },
+        '|',
+        'undo', 'redo', '|',
+        'edit-mode', 'code-theme', 'export', '|',
+        'outline', 'fullscreen',
+        {
+          name: 'typewriter',
+          tip: mdI18n.t('toolbar.typewriter'),
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+          click: toggleTypewriter
+        },
+        'br',
+        'insert-before', 'insert-after', 'both', 'preview', '|', 'devtools',
+        {
+          name: 'open',
+          tip: mdI18n.t('toolbar.open'),
+          hotkey: '⌘O',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+          click: openFile
+        },
+        {
+          name: 'save',
+          tip: mdI18n.t('toolbar.save'),
+          hotkey: '⌘S',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+          click: function () { saveFile(); }
+        },
+        {
+          name: 'pagewidth',
+          tip: mdI18n.t('toolbar.pagewidth'),
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h2v14H4V5zm5 0h2v14H9V5zm5 0h2v14h-2V5zm4 0h2v14h-2V5z"/></svg>',
+          click: function () {
+            var current = safeStorageGet('md-pagewidth') || '';
+            var value = prompt(mdI18n.t('pagewidth.prompt'), current);
+            if (value !== null) {
+              pageWidth = value;
+              safeStorageSet('md-pagewidth', value);
+              applyPageWidth(value);
+            }
+          }
+        },
+        {
+          name: 'theme',
+          tip: mdI18n.t('toolbar.theme'),
+          icon: THEME_ICONS.light,
+          click: function () {
+            applyTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'auto' : 'light');
+          }
+        },
+        {
+          name: 'lang',
+          tip: mdI18n.t('toolbar.lang'),
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+          click: function () {
+            switchLanguage(mdI18n.lang === 'zh-CN' ? 'en-US' : 'zh-CN');
+          }
+        },
+        'help'
+      ],
+      toolbarConfig: { hide: false, pin: true },
+      upload: {
+        accept: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
+        max: MAX_IMAGE_BYTES,
+        multiple: true,
+        handler: handleImageFiles
+      },
+      input: function (value) {
+        if (!editorReady || restoringDraft) return;
+        userEdited = true;
+        scheduleDraftSave(value);
+        updateEmptyState();
+        scheduleStatusRender();
+      },
+      ctrlEnter: function () {
+        saveDraftNow(vditor.getValue());
+      },
+      after: function () {
+        editorReady = true;
+        if (pendingRestoreValue !== null) {
+          vditor.setValue(pendingRestoreValue, true);
+          pendingRestoreValue = null;
+        }
+        updateEmptyState();
+        renderStatusBar();
+        mdI18n.applyI18n();
+        var chromeObserver = new MutationObserver(function () {
+          renderModeLang();
+          updateStatusVisibility();
+        });
+        chromeObserver.observe(document.getElementById('vditor'), {
+          attributes: true,
+          attributeFilter: ['class'],
+          childList: true,
+          subtree: true
+        });
+        applyTheme(theme);
+        applyTypewriterPosition();
+        updateTypewriterButton();
+        if (vditor.vditor.options.preview.transform) {
+          log('preview', 'callout transform attached');
+        }
+        if (DEBUG) {
+          window.__mdEditorTest = {
+            editor: vditor,
+            saveDraft: saveDraftNow,
+            insertImages: handleImageFiles
+          };
+        }
+        log('init', 'Vditor ready', {
+          mode: vditor.getCurrentMode(),
+          windowHeight: window.innerHeight
+        });
+
+        draftPromise.then(function (draft) {
+          if (userEdited) return;
+          var legacyDraft = safeStorageGet('md-editor');
+          var fallbackDraft = safeStorageGet('md-editor-fallback');
+          var markdown = draft && typeof draft.markdown === 'string' ? draft.markdown
+            : (fallbackDraft || legacyDraft);
+          if (!markdown) return;
+          restoringDraft = true;
+          vditor.setValue(markdown, true);
+          restoringDraft = false;
+          if (!draft) {
+            saveDraftNow(markdown).then(function (saved) {
+              if (saved) {
+                safeStorageRemove('md-editor-fallback');
+                safeStorageRemove('md-editor');
+              }
+            });
+          }
+        });
+
+        if (pageWidth) applyPageWidth(pageWidth);
+        var observerTimer = null;
+        var observer = new MutationObserver(function (mutations) {
+          if (!pageWidth || !mutationsAddContentArea(mutations)) return;
+          clearTimeout(observerTimer);
+          observerTimer = setTimeout(function () { applyPageWidth(pageWidth); }, 50);
+        });
+        observer.observe(document.getElementById('vditor'), { childList: true, subtree: true });
+      }
+    });
+  }
+
+  function switchLanguage(next) {
+    if (!vditor) return;
+    var currentValue = vditor.getValue();
+    var currentMode = vditor.getCurrentMode();
+    vditor.destroy();
+    vditor = null;
+    pendingRestoreValue = currentValue;
+    mdI18n.setLang(next);
+    vditor = createVditor(currentValue);
+    applyTheme(theme);
+    applyPageWidth(pageWidth);
+    saveStateMessage = '';
+    renderStatusBar();
+    log('i18n', 'Language switched to ' + next, { mode: currentMode });
+  }
+
   log('init', 'Creating Vditor instance...');
 
-  vditor = new Vditor('vditor', {
-    cdn: new URL('vendor/vditor', document.baseURI).href.replace(/\/$/, ''),
-    mode: 'ir',
-    value: defaultValue,
-    placeholder: '开始写作...',
-    height: '100vh',
-    cache: { enable: false },
-    counter: { enable: true },
-    outline: { enable: true, position: 'left' },
-    tab: '\t',
-    typewriterMode: typewriterMode,
-    preview: {
-      maxWidth: 4096,
-      theme: { current: effectiveInit, list: {} },
-      hljs: { enable: true, style: 'github' },
-      markdown: {
-        autoSpace: true,
-        toc: true,
-        sanitize: true
-      },
-      math: {
-        engine: 'KaTeX',
-        inlineDigit: true,
-        macros: {}
-      },
-      transform: function (html) {
-        return transformCallouts(html);
-      }
-    },
-    toolbar: [
-      'emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|',
-      'list', 'ordered-list', 'check',
-      { name: 'outdent', hotkey: '⇧Tab', tipPosition: 'n' },
-      'indent', '|',
-      'quote', 'line', 'code', 'inline-code', '|',
-      'upload', 'table',
-      {
-        name: 'diagram',
-        tip: '插入图表',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-        toolbar: [
-          {
-            name: 'mermaid',
-            tip: 'Mermaid',
-            icon: 'Mermaid',
-            click: function () {
-              vditor.insertValue('```mermaid\ngraph TD\n  A-->B\n```\n', true);
-            }
-          },
-          {
-            name: 'echarts',
-            tip: 'ECharts',
-            icon: 'ECharts',
-            click: function () {
-              vditor.insertValue('```echarts\n{\n  "title": { "text": "示例图表" },\n  "tooltip": {},\n  "xAxis": { "type": "category", "data": ["A", "B", "C"] },\n  "yAxis": { "type": "value" },\n  "series": [{ "type": "bar", "data": [5, 8, 3] }]\n}\n```\n', true);
-            }
-          },
-          {
-            name: 'mindmap',
-            tip: 'Mindmap',
-            icon: 'Mindmap',
-            click: function () {
-              vditor.insertValue('```mindmap\n# 主题\n## 一级分支\n### 二级分支\n```\n', true);
-            }
-          },
-          {
-            name: 'markmap',
-            tip: 'Markmap',
-            icon: 'Markmap',
-            click: function () {
-              vditor.insertValue('```markmap\n# 主题\n## 分支\n```\n', true);
-            }
-          },
-          {
-            name: 'flowchart',
-            tip: 'Flowchart',
-            icon: 'Flowchart',
-            click: function () {
-              vditor.insertValue('```flow\nst=>start: 开始\ne=>end: 结束\nop=>operation: 处理\ncond=>condition: 是否通过?\nst->op->cond\ncond(no)->op\ncond(yes)->e\n```\n', true);
-            }
-          },
-          {
-            name: 'graphviz',
-            tip: 'Graphviz',
-            icon: 'Graphviz',
-            click: function () {
-              vditor.insertValue('```graphviz\ndigraph G {\n  A -> B;\n  B -> C;\n}\n```\n', true);
-            }
-          },
-          {
-            name: 'plantuml',
-            tip: 'PlantUML',
-            icon: 'PlantUML',
-            click: function () {
-              vditor.insertValue('```plantuml\n@startuml\nAlice -> Bob: Hello\n@enduml\n```\n', true);
-            }
-          },
-          {
-            name: 'abc',
-            tip: 'ABC',
-            icon: 'ABC',
-            click: function () {
-              vditor.insertValue('```abc\nX:1\nT:示例曲谱\nM:4/4\nL:1/4\nK:C\nC D E F | G A B c |\n```\n', true);
-            }
-          },
-          {
-            name: 'smiles',
-            tip: 'SMILES',
-            icon: 'SMILES',
-            click: function () {
-              vditor.insertValue('```smiles\nC(C(=O)O)N\n```\n', true);
-            }
-          }
-        ]
-      },
-      '|',
-      'undo', 'redo', '|',
-      'edit-mode', 'code-theme', 'export', '|',
-      'outline', 'fullscreen',
-      {
-        name: 'typewriter',
-        tip: '打字机模式',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
-        click: toggleTypewriter
-      },
-      'br',
-      'insert-before', 'insert-after', 'both', 'preview', '|', 'devtools',
-      {
-        name: 'open',
-        tip: '打开 Markdown 文件',
-        hotkey: '⌘O',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
-        click: openFile
-      },
-      {
-        name: 'save',
-        tip: '保存为 Markdown 文件',
-        hotkey: '⌘S',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-        click: function () { saveFile(); }
-      },
-      {
-        name: 'pagewidth',
-        tip: '设置编辑区最大宽度',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h2v14H4V5zm5 0h2v14H9V5zm5 0h2v14h-2V5zm4 0h2v14h-2V5z"/></svg>',
-        click: function () {
-          var current = safeStorageGet('md-pagewidth') || '';
-          var value = prompt('编辑区最大宽度 (px)，0 或留空 = 铺满:', current);
-          if (value !== null) {
-            pageWidth = value;
-            safeStorageSet('md-pagewidth', value);
-            applyPageWidth(value);
-          }
-        }
-      },
-      {
-        name: 'theme',
-        tip: '切换浅色 / 深色 / 跟随系统主题',
-        icon: THEME_ICONS.light,
-        click: function () {
-          applyTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'auto' : 'light');
-        }
-      },
-      'help'
-    ],
-    toolbarConfig: { hide: false, pin: true },
-    upload: {
-      accept: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
-      max: MAX_IMAGE_BYTES,
-      multiple: true,
-      handler: handleImageFiles
-    },
-    input: function (value) {
-      if (!editorReady || restoringDraft) return;
-      userEdited = true;
-      scheduleDraftSave(value);
-      updateEmptyState();
-      scheduleStatusRender();
-    },
-    ctrlEnter: function () {
-      saveDraftNow(vditor.getValue());
-    },
-    after: function () {
-      editorReady = true;
-      updateEmptyState();
-      renderStatusBar();
-      var chromeObserver = new MutationObserver(function () {
-        renderModeLang();
-        updateStatusVisibility();
-      });
-      chromeObserver.observe(document.getElementById('vditor'), {
-        attributes: true,
-        attributeFilter: ['class'],
-        childList: true,
-        subtree: true
-      });
-      document.addEventListener('fullscreenchange', updateStatusVisibility);
-      document.addEventListener('webkitfullscreenchange', updateStatusVisibility);
-      applyTheme(theme);
-      applyTypewriterPosition();
-      updateTypewriterButton();
-      if (vditor.vditor.options.preview.transform) {
-        log('preview', 'callout transform attached');
-      }
-      if (DEBUG) {
-        window.__mdEditorTest = {
-          editor: vditor,
-          saveDraft: saveDraftNow,
-          insertImages: handleImageFiles
-        };
-      }
-      log('init', 'Vditor ready', {
-        mode: vditor.getCurrentMode(),
-        windowHeight: window.innerHeight
-      });
-
-      draftPromise.then(function (draft) {
-        if (userEdited) return;
-        var legacyDraft = safeStorageGet('md-editor');
-        var fallbackDraft = safeStorageGet('md-editor-fallback');
-        var markdown = draft && typeof draft.markdown === 'string' ? draft.markdown
-          : (fallbackDraft || legacyDraft);
-        if (!markdown) return;
-        restoringDraft = true;
-        vditor.setValue(markdown, true);
-        restoringDraft = false;
-        if (!draft) {
-          saveDraftNow(markdown).then(function (saved) {
-            if (saved) {
-              safeStorageRemove('md-editor-fallback');
-              safeStorageRemove('md-editor');
-            }
-          });
-        }
-      });
-
-      if (pageWidth) applyPageWidth(pageWidth);
-      var observerTimer = null;
-      var observer = new MutationObserver(function (mutations) {
-        if (!pageWidth || !mutationsAddContentArea(mutations)) return;
-        clearTimeout(observerTimer);
-        observerTimer = setTimeout(function () { applyPageWidth(pageWidth); }, 50);
-      });
-      observer.observe(document.getElementById('vditor'), { childList: true, subtree: true });
-    }
-  });
+  vditor = createVditor(buildWelcomeDoc());
 
   window.addEventListener('keydown', function (event) {
     if (!event.shiftKey || event.key !== 'Tab') return;
