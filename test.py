@@ -54,7 +54,6 @@ JS_REQUIRED_PATTERNS = {
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
     "md-pagewidth localStorage": r"md-pagewidth",
-<<<<<<< HEAD
     "MDModal confirm": r"MDModal\.confirm",
     "MDModal prompt": r"MDModal\.prompt",
     "outline scroll-spy active": r"md-outline-active",
