@@ -131,6 +131,16 @@
     'formatbar.inlineCode': 'Inline code',
     'formatbar.link': 'Link',
     'formatbar.highlight': 'Highlight',
-    'formatbar.quote': 'Quote'
+    'formatbar.quote': 'Quote',
+    'action.findReplaceToggle': 'Toggle find panel',
+    'find.title': "Find and Replace",
+    'find.placeholder': "Find",
+    'find.replacePlaceholder': "Replace with",
+    'find.count': "{current} of {total}",
+    'find.replace': "Replace",
+    'find.replaceAll': "Replace All",
+    'find.case': "Case sensitive",
+    'find.next': "Next",
+    'find.prev': "Previous"
   };
 })();

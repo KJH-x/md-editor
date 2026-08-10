@@ -131,6 +131,16 @@
     'formatbar.inlineCode': "Código",
     'formatbar.link': "Enlace",
     'formatbar.highlight': "Resaltar",
-    'formatbar.quote': "Cita"
+    'formatbar.quote': "Cita",
+    'action.findReplaceToggle': "Alternar panel de búsqueda",
+    'find.title': "Buscar y Reemplazar",
+    'find.placeholder': "Buscar",
+    'find.replacePlaceholder': "Reemplazar con",
+    'find.count': "{current} de {total}",
+    'find.replace': "Reemplazar",
+    'find.replaceAll': "Reemplazar todo",
+    'find.case': "Distinguir mayúsculas",
+    'find.next': "Siguiente",
+    'find.prev': "Anterior"
   };
 })();

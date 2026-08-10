@@ -131,6 +131,16 @@
     'formatbar.inlineCode': "कोड",
     'formatbar.link': "लिंक",
     'formatbar.highlight': "हाइलाइट",
-    'formatbar.quote': "उद्धरण"
+    'formatbar.quote': "उद्धरण",
+    'action.findReplaceToggle': "खोज पैनल टॉगल करें",
+    'find.title': "खोजें और बदलें",
+    'find.placeholder': "खोजें",
+    'find.replacePlaceholder': "इससे बदलें",
+    'find.count': "{current} / {total}",
+    'find.replace': "बदलें",
+    'find.replaceAll': "सभी बदलें",
+    'find.case': "केस संवेदी",
+    'find.next': "अगला",
+    'find.prev': "पिछला"
   };
 })();

@@ -131,6 +131,16 @@
     'formatbar.inlineCode': '行内代码',
     'formatbar.link': '链接',
     'formatbar.highlight': '高亮标记',
-    'formatbar.quote': '引用'
+    'formatbar.quote': '引用',
+    'action.findReplaceToggle': '显示 / 隐藏查找面板',
+    'find.title': "查找替换",
+    'find.placeholder': "查找",
+    'find.replacePlaceholder': "替换为",
+    'find.count': "{current} / {total}",
+    'find.replace': "替换",
+    'find.replaceAll': "全部替换",
+    'find.case': "区分大小写",
+    'find.next': "下一个",
+    'find.prev': "上一个"
   };
 })();

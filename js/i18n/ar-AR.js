@@ -131,6 +131,16 @@
     'formatbar.inlineCode': "كود",
     'formatbar.link': "رابط",
     'formatbar.highlight': "تمييز",
-    'formatbar.quote': "اقتباس"
+    'formatbar.quote': "اقتباس",
+    'action.findReplaceToggle': "تبديل لوحة البحث",
+    'find.title': "بحث واستبدال",
+    'find.placeholder': "بحث",
+    'find.replacePlaceholder': "استبدال بـ",
+    'find.count': "{current} من {total}",
+    'find.replace': "استبدال",
+    'find.replaceAll': "استبدال الكل",
+    'find.case': "حساس لحالة الأحرف",
+    'find.next': "التالي",
+    'find.prev': "السابق"
   };
 })();

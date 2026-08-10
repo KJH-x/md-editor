@@ -18,6 +18,8 @@
   --md-panel-bg: #ffffff;
   --md-content-bg: #ffffff;
   --md-selection: rgba(59, 130, 246, 0.22);
+  --md-find-bg: #ffe58a;
+  --md-find-fg: #1f2328;
   --md-radius: 8px;
   --md-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --md-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -42,6 +44,8 @@
   --md-panel-bg: #1c2128;
   --md-content-bg: #0d1117;
   --md-selection: rgba(83, 155, 245, 0.32);
+  --md-find-bg: #d29922;
+  --md-find-fg: #1b1f24;
   --md-radius: 8px;
   --md-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --md-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -1028,6 +1032,293 @@ body:has(.vditor--fullscreen) #statusbar {
   .shortcut-overlay__backdrop,
   .md-modal-backdrop,
   .md-palette__backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ---- Mobile ---- */
+
+@media (max-width: 1150px) {
+  .vditor-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .vditor-toolbar__item {
+    float: none;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .editor-brand {
+    display: none;
+  }
+
+  .save-status {
+    max-width: calc(100vw - 28px);
+    font-size: 11px;
+  }
+
+  #statusbar {
+    max-width: calc(100vw - 36px);
+    font-size: 10px;
+  }
+
+  .statusbar__hint {
+    display: none;
+  }
+
+  .vditor-toolbar {
+    padding: 0 4px !important;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .vditor-toolbar__item {
+    float: none;
+    flex: 0 0 auto;
+  }
+
+  .vditor-toolbar__item .vditor-tooltipped {
+    width: 28px;
+    margin: 4px 0;
+  }
+
+  .vditor-toolbar__divider {
+    flex: 0 0 auto;
+  }
+
+  .vditor-outline {
+    display: none !important;
+  }
+
+  .vditor-wysiwyg .vditor-reset,
+  .vditor-ir .vditor-reset,
+  .vditor-sv.vditor-reset {
+    padding: 20px 20px !important;
+  }
+}
+
+/* ---- Find & Replace ---- */
+
+#md-find-replace {
+  position: fixed;
+  top: 56px;
+  right: 16px;
+  z-index: 150;
+  width: min(340px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--md-border);
+  border-radius: var(--md-radius);
+  background: var(--md-panel-bg);
+  color: var(--md-text);
+  box-shadow: var(--md-shadow);
+  font: 13px/1.4 var(--md-font);
+}
+
+#md-find-replace[hidden] {
+  display: none !important;
+}
+
+.md-find-replace__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.md-find-replace__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.md-find-replace__row:first-of-type {
+  margin-top: 0;
+}
+
+.md-find-replace__input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background: var(--md-content-bg);
+  color: var(--md-text);
+  font: 13px/1.4 var(--md-font);
+}
+
+.md-find-replace__input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.md-find-replace__count {
+  flex: 1;
+  min-width: 0;
+  color: var(--md-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.md-find-replace__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.md-find-replace__btn {
+  padding: 5px 10px;
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  background: var(--md-toolbar-bg);
+  color: var(--md-text);
+  font: 12px/1 var(--md-font);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.md-find-replace__btn:hover {
+  color: var(--md-icon-hover);
+  background-color: var(--md-icon-hover-bg);
+}
+
+.md-find-replace__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--md-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.md-find-replace__btn--primary {
+  border-color: var(--md-accent);
+  background: var(--md-accent);
+  color: #ffffff;
+}
+
+.md-find-replace__btn--primary:hover {
+  background: color-mix(in srgb, var(--md-accent) 85%, #000);
+  border-color: color-mix(in srgb, var(--md-accent) 85%, #000);
+  color: #ffffff;
+}
+
+.md-find-replace__btn.is-active {
+  border-color: var(--md-accent);
+  color: var(--md-accent);
+  background-color: var(--md-accent-bg);
+}
+
+mark.md-find-hi {
+  background: var(--md-find-bg);
+  color: var(--md-find-fg);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ---- Status bar ---- */
+
+#statusbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 8px;
+  height: 26px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  max-width: min(560px, calc(100vw - 220px));
+  padding: 0 10px;
+  border: 1px solid var(--md-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, Canvas 82%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--md-muted);
+  font: 11px/1 var(--md-font);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#statusbar.is-fullscreen {
+  display: none;
+}
+
+body:has(.vditor--fullscreen) #statusbar {
+  display: none;
+}
+
+.statusbar__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  color: var(--md-muted);
+}
+
+.statusbar__seg + .statusbar__seg {
+  border-left: 1px solid var(--md-border);
+}
+
+.statusbar__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--md-muted);
+}
+
+.statusbar__dot--saving {
+  background: var(--md-warning);
+  animation: statusbar-pulse 1.2s ease-in-out infinite;
+}
+
+.statusbar__dot--saved {
+  background: var(--md-success);
+}
+
+.statusbar__dot--error {
+  background: var(--md-danger);
+}
+
+.statusbar__save--empty {
+  display: none;
+}
+
+@keyframes statusbar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+}
+
+/* ---- Firefox scrollbars ---- */
+
+@supports (scrollbar-width: thin) {
+  .vditor-content,
+  .vditor-outline {
+    scrollbar-width: thin;
+    scrollbar-color: var(--md-border) transparent;
+  }
+}
+
+/* ---- Reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .editor-brand,
+  .save-status,
+  .shortcut-overlay__backdrop,
+  .md-modal-backdrop {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

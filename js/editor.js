@@ -1034,6 +1034,7 @@
         if (window.MDCommandPalette && typeof window.MDCommandPalette.ensure === 'function') {
           window.MDCommandPalette.ensure();
         }
+        if (window.MDFindReplace) window.MDFindReplace.setVditor(vditor);
         if (vditor.vditor.options.preview.transform) {
           log('preview', 'callout transform attached');
         }
@@ -1224,9 +1225,21 @@
       id: 'find-replace',
       label: mdI18n.t('action.findReplace'),
       category: 'app',
-      shortcut: '',
+      shortcut: 'Ctrl+F',
       keywords: ['find', 'replace', mdI18n.t('action.findReplace')],
-      run: function () {}
+      run: function () {
+        if (window.MDFindReplace) window.MDFindReplace.open(false);
+      }
+    });
+    window.MD_ACTIONS.register({
+      id: 'find-replace-toggle',
+      label: mdI18n.t('action.findReplaceToggle'),
+      category: 'app',
+      shortcut: '',
+      keywords: ['find', 'replace', 'toggle', mdI18n.t('action.findReplaceToggle')],
+      run: function () {
+        if (window.MDFindReplace) window.MDFindReplace.toggle(false);
+      }
     });
     window.MD_ACTIONS.register({
       id: 'palette',
@@ -1347,6 +1360,18 @@
       event.preventDefault();
       event.stopPropagation();
       if (window.MDCommandPalette) window.MDCommandPalette.toggle();
+      return;
+    }
+    if (mod && event.key.toLowerCase() === 'f') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (window.MDFindReplace) window.MDFindReplace.open(false);
+      return;
+    }
+    if (mod && event.key.toLowerCase() === 'h') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (window.MDFindReplace) window.MDFindReplace.open(true);
       return;
     }
     if (event.key === '?' && !mod && !event.altKey && !targetInEditorArea(event.target)) {

@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "js/editor.js",
     "js/file-io.js",
     "js/actions.js",
+    "js/ui/find-replace.js",
     "LICENSE",
     "README.md",
     ".gitignore",
@@ -63,6 +64,7 @@ JS_REQUIRED_PATTERNS = {
     "command palette": r"MDCommandPalette",
     "slash menu": r"MDSlashMenu",
     "floating format bar module": r"MDFormatBar",
+    "find & replace": r"MDFindReplace",
 }
 
 CSS_REQUIRED_PATTERNS = {
