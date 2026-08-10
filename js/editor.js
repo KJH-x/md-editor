@@ -243,6 +243,31 @@
     });
   }
 
+  function readImageSettings() {
+    var defaults = { maxDim: 1600, quality: 0.82 };
+    try {
+      var raw = safeStorageGet('md-img');
+      if (!raw) return defaults;
+      var parsed = JSON.parse(raw);
+      return {
+        maxDim: typeof parsed.maxDim === 'number' && parsed.maxDim > 0 ? parsed.maxDim : defaults.maxDim,
+        quality: typeof parsed.quality === 'number' && parsed.quality > 0 && parsed.quality <= 1 ? parsed.quality : defaults.quality
+      };
+    } catch (err) {
+      log('image', 'Invalid md-img settings', err);
+      return defaults;
+    }
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (event) { resolve(event.target.result); };
+      reader.onerror = function () { reject(new Error('无法读取图片：' + file.name)); };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function renderCompressedImage(image, maxWidth, quality) {
     var scale = Math.min(1, maxWidth / image.naturalWidth, 12000 / image.naturalHeight);
     var canvas = document.createElement('canvas');
@@ -261,9 +286,21 @@
     if (file.size > MAX_IMAGE_BYTES) {
       return Promise.reject(new Error('图片不能超过 10 MB：' + file.name));
     }
+    if (file.type === 'image/gif') {
+      return readFileAsDataUrl(file).then(function (dataUrl) {
+        if (dataUrl.length > MAX_DATA_URL_LENGTH) {
+          throw new Error('GIF 动画无法压缩，且数据超过 3 MB 限制：' + file.name);
+        }
+        return dataUrl;
+      });
+    }
+    if (file.type === 'image/svg+xml') {
+      return readFileAsDataUrl(file);
+    }
 
     return readImage(file).then(function (image) {
-      var attempts = [[1600, 0.82], [1280, 0.72], [960, 0.62]];
+      var settings = readImageSettings();
+      var attempts = [[settings.maxDim, settings.quality], [1280, 0.72], [960, 0.62]];
       var dataUrl = '';
       for (var i = 0; i < attempts.length; i++) {
         dataUrl = renderCompressedImage(image, attempts[i][0], attempts[i][1]);
@@ -279,18 +316,31 @@
 
   function handleImageFiles(files) {
     var fileList = Array.prototype.slice.call(files);
-    return Promise.all(fileList.map(function (file) {
+    return Promise.allSettled(fileList.map(function (file) {
       return prepareImage(file).then(function (dataUrl) {
         return '![' + markdownImageAlt(file.name) + '](' + dataUrl + ')';
       });
-    })).then(function (images) {
-      vditor.insertValue(images.join('\n\n') + '\n', true);
-      scheduleDraftSave(vditor.getValue());
+    })).then(function (results) {
+      var successful = [];
+      var failed = [];
+      results.forEach(function (result) {
+        if (result.status === 'fulfilled') {
+          successful.push(result.value);
+        } else {
+          failed.push(result.reason && result.reason.message ? result.reason.message : String(result.reason || '未知错误'));
+        }
+      });
+      if (successful.length) {
+        vditor.insertValue(successful.join('\n\n') + '\n', true);
+        scheduleDraftSave(vditor.getValue());
+      }
+      if (failed.length) {
+        var message = failed.join('；');
+        setSaveStatus(message, true);
+        log('upload', 'Image insertion partial failure', failed);
+        return message;
+      }
       return null;
-    }).catch(function (err) {
-      setSaveStatus(err.message || '图片处理失败', true);
-      log('upload', 'Image insertion failed', err);
-      return err.message || '图片处理失败';
     });
   }
 
@@ -427,7 +477,7 @@
     ],
     toolbarConfig: { hide: false, pin: true },
     upload: {
-      accept: 'image/png,image/jpeg,image/webp',
+      accept: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
       max: MAX_IMAGE_BYTES,
       multiple: true,
       handler: handleImageFiles
