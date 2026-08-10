@@ -53,6 +53,7 @@ JS_REQUIRED_PATTERNS = {
     "IIFE wrapper": r"\(function\s*\(\)",
     "use strict": r"'use strict'",
     "md-pagewidth localStorage": r"md-pagewidth",
+    "outline scroll-spy active": r"md-outline-active",
     "file-io sanitize": r"sanitizeFilename",
     "file-io decode": r"decodeFile",
 }
@@ -61,6 +62,7 @@ CSS_REQUIRED_PATTERNS = {
     "body style": r"body\s*\{",
     "#vditor height": r"#vditor\s*\{",
     "editor-brand": r"\.editor-brand\s*\{",
+    "outline active style": r"md-outline-active",
 }
 
 def green(s):
