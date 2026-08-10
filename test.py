@@ -179,15 +179,19 @@ def validate():
         else:
             print(f"  {green(chr(0x2713))} No unsupported vditor.resize call")
 
-        node = subprocess.run(
-            ["node", "--check", str(js_path)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if node.returncode == 0:
+        try:
+            node = subprocess.run(
+                ["node", "--check", str(js_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except (FileNotFoundError, OSError):
+            print("  node not found; skipped JavaScript syntax check")
+            node = None
+        if node is not None and node.returncode == 0:
             print(f"  {green(chr(0x2713))} JavaScript syntax")
-        else:
+        elif node is not None:
             print(f"  {red(chr(0x2717))} JavaScript syntax")
             errors.append(node.stderr.strip() or "JavaScript syntax check failed")
 
@@ -216,8 +220,11 @@ def serve(port=8080):
         def log_message(self, format, *args):
             print(f"  [{self.log_date_time_string()}] {args[0]}")
 
-    with socketserver.TCPServer(("", port), QuietHandler) as httpd:
-        print(f"\n  Dev server running at: {green(f'http://localhost:{port}')}")
+    class ReusableTCPServer(socketserver.TCPServer):
+        allow_reuse_address = True
+
+    with ReusableTCPServer(("127.0.0.1", port), QuietHandler) as httpd:
+        print(f"\n  Dev server running at: {green(f'http://127.0.0.1:{port}')}")
         print(f"  Serving from: {ROOT}")
         print(f"  Press Ctrl+C to stop\n")
         try:

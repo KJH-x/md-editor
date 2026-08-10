@@ -119,11 +119,18 @@
           database.createObjectStore(DRAFT_STORE, { keyPath: 'id' });
         }
       };
-      request.onsuccess = function () { resolve(request.result); };
+      request.onsuccess = function () {
+        var database = request.result;
+        database.onclose = function () { databasePromise = null; };
+        database.onversionchange = function () { databasePromise = null; };
+        resolve(database);
+      };
       request.onerror = function () {
+        databasePromise = null;
         reject(request.error || new Error('无法打开本地草稿数据库'));
       };
       request.onblocked = function () {
+        databasePromise = null;
         reject(new Error('本地草稿数据库被其他页面占用'));
       };
     });
@@ -332,7 +339,6 @@
       hljs: { enable: true, style: 'github' },
       markdown: {
         autoSpace: true,
-        chinesePunct: true,
         toc: true,
         sanitize: true
       }
@@ -343,7 +349,7 @@
       'quote', 'line', 'code', 'inline-code', '|',
       'upload', 'table', '|',
       'undo', 'redo', '|',
-      'edit-mode', 'content-theme', 'code-theme', 'theme', 'export', '|',
+      'edit-mode', 'content-theme', 'code-theme', 'export', '|',
       'outline', 'fullscreen',
       {
         name: 'open',
