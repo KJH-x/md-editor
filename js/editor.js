@@ -307,6 +307,51 @@
     });
   }
 
+  function openFile() {
+    if (vditor.getValue().trim() &&
+        !confirm('当前编辑区有内容，打开新文件将替换全部内容，是否继续？')) {
+      return;
+    }
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.md,.markdown,.txt';
+    input.addEventListener('change', function () {
+      if (!input.files[0]) return;
+      var file = input.files[0];
+      file.arrayBuffer().then(function (buffer) {
+        var decoded = mdFileIO.decodeFile(buffer);
+        if (decoded.encoding !== 'utf-8') {
+          setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开');
+        }
+        vditor.setValue(decoded.text, true);
+        scheduleDraftSave(decoded.text);
+        log('open', 'Loaded: ' + file.name + ' (' + decoded.encoding + ')');
+      }).catch(function (err) {
+        setSaveStatus('文件读取失败：' + file.name, true);
+        log('open', 'File read failed', err);
+      });
+    });
+    input.click();
+  }
+
+  function saveFile(force) {
+    var content = vditor.getValue();
+    var match = content.match(/^#\s+(.+)$/m);
+    var baseName = match ? match[1].trim() : 'untitled';
+    var filename = mdFileIO.sanitizeFilename(baseName) + '.md';
+    var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    if (force) saveDraftNow(content);
+    log('save', 'Downloaded: ' + filename);
+  }
+
   function mutationsAddContentArea(mutations) {
     var selector = '[contenteditable="true"], .vditor-sv textarea, .vditor-ir__preview, .vditor-sv__preview';
     for (var i = 0; i < mutations.length; i++) {
@@ -497,54 +542,16 @@
       {
         name: 'open',
         tip: '打开 Markdown 文件',
+        hotkey: '⌘O',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
-        click: function () {
-          if (vditor.getValue().trim() &&
-              !confirm('当前编辑区有内容，打开新文件将替换全部内容，是否继续？')) {
-            return;
-          }
-          var input = document.createElement('input');
-          input.type = 'file';
-          input.accept = '.md,.markdown,.txt';
-          input.addEventListener('change', function () {
-            if (!input.files[0]) return;
-            var file = input.files[0];
-            file.arrayBuffer().then(function (buffer) {
-              var decoded = mdFileIO.decodeFile(buffer);
-              if (decoded.encoding !== 'utf-8') {
-                setSaveStatus('已按 ' + decoded.encoding.toUpperCase() + ' 打开');
-              }
-              vditor.setValue(decoded.text, true);
-              scheduleDraftSave(decoded.text);
-              log('open', 'Loaded: ' + file.name + ' (' + decoded.encoding + ')');
-            }).catch(function (err) {
-              setSaveStatus('文件读取失败：' + file.name, true);
-              log('open', 'File read failed', err);
-            });
-          });
-          input.click();
-        }
+        click: openFile
       },
       {
         name: 'save',
         tip: '保存为 Markdown 文件',
+        hotkey: '⌘S',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-        click: function () {
-          var content = vditor.getValue();
-          var match = content.match(/^#\s+(.+)$/m);
-          var baseName = match ? match[1].trim() : 'untitled';
-          var filename = mdFileIO.sanitizeFilename(baseName) + '.md';
-          var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-          var url = URL.createObjectURL(blob);
-          var anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = filename;
-          document.body.appendChild(anchor);
-          anchor.click();
-          document.body.removeChild(anchor);
-          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-          log('save', 'Downloaded: ' + filename);
-        }
+        click: function () { saveFile(); }
       },
       {
         name: 'pagewidth',
@@ -582,6 +589,9 @@
       userEdited = true;
       scheduleDraftSave(value);
       updateEmptyState();
+    },
+    ctrlEnter: function () {
+      saveDraftNow(vditor.getValue());
     },
     after: function () {
       editorReady = true;
@@ -641,4 +651,70 @@
   window.addEventListener('pagehide', function () {
     flushDraft();
   });
+
+  var shortcutOverlay = document.getElementById('shortcut-overlay');
+  var lastFocusedElement = null;
+
+  function targetInEditorArea(target) {
+    var node = target && target.nodeType === Node.ELEMENT_NODE ? target : target && target.parentElement;
+    if (!node || !node.closest) return false;
+    return !!node.closest('[contenteditable="true"], textarea, .vditor-toolbar');
+  }
+
+  function openShortcutOverlay() {
+    if (!shortcutOverlay) return;
+    lastFocusedElement = document.activeElement;
+    shortcutOverlay.hidden = false;
+    var panel = shortcutOverlay.querySelector('.shortcut-overlay__panel');
+    if (panel) panel.focus();
+  }
+
+  function closeShortcutOverlay() {
+    if (!shortcutOverlay || shortcutOverlay.hidden) return;
+    shortcutOverlay.hidden = true;
+    if (lastFocusedElement && lastFocusedElement.focus) lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+
+  function toggleShortcutOverlay() {
+    if (shortcutOverlay && !shortcutOverlay.hidden) {
+      closeShortcutOverlay();
+    } else {
+      openShortcutOverlay();
+    }
+  }
+
+  window.addEventListener('keydown', function (event) {
+    if (event.isComposing || event.repeat) return;
+    var mod = event.ctrlKey || event.metaKey;
+    if (mod && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      event.stopPropagation();
+      saveFile(!event.shiftKey);
+      return;
+    }
+    if (mod && event.key.toLowerCase() === 'o') {
+      event.preventDefault();
+      event.stopPropagation();
+      openFile();
+      return;
+    }
+    if (event.key === '?' && !mod && !event.altKey && !targetInEditorArea(event.target)) {
+      toggleShortcutOverlay();
+      return;
+    }
+    if (event.key === 'Escape' && shortcutOverlay && !shortcutOverlay.hidden) {
+      closeShortcutOverlay();
+    }
+  }, true);
+
+  if (shortcutOverlay) {
+    shortcutOverlay.addEventListener('click', function (event) {
+      if (event.target === shortcutOverlay ||
+          (event.target.classList && event.target.classList.contains('shortcut-overlay__close')) ||
+          (event.target.classList && event.target.classList.contains('shortcut-overlay__backdrop'))) {
+        closeShortcutOverlay();
+      }
+    });
+  }
 })();
