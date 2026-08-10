@@ -1105,6 +1105,64 @@ body:has(.vditor--fullscreen) #statusbar {
   }
 }
 
+/* ---- RTL mirroring ---- */
+
+html[dir="rtl"] .editor-brand {
+  right: auto;
+  left: 14px;
+}
+
+html[dir="rtl"] .save-status {
+  left: auto;
+  right: 14px;
+}
+
+html[dir="rtl"] .statusbar__seg + .statusbar__seg {
+  border-left: 0;
+  border-right: 1px solid var(--md-border);
+}
+
+html[dir="rtl"] .vditor-outline {
+  border-right: 0;
+  border-left: 1px solid var(--border-color);
+}
+
+html[dir="rtl"] .vditor-outline li > span.md-outline-active::before {
+  left: auto;
+  right: 0;
+}
+
+html[dir="rtl"] .vditor-outline li > ul {
+  margin-left: 0;
+  margin-right: 6px;
+}
+
+html[dir="rtl"] .vditor-outline li > ul > li > span {
+  padding-left: 0;
+  padding-right: 14px;
+}
+
+html[dir="rtl"] .vditor-reset blockquote.callout {
+  border-left: 0;
+  border-right: 4px solid var(--md-border);
+  border-radius: var(--md-radius) 0 0 var(--md-radius);
+}
+
+html[dir="rtl"] .vditor-reset blockquote.callout--note {
+  border-right-color: var(--md-accent);
+}
+
+html[dir="rtl"] .vditor-reset blockquote.callout--tip {
+  border-right-color: var(--md-success);
+}
+
+html[dir="rtl"] .vditor-reset blockquote.callout--warning {
+  border-right-color: var(--md-warning);
+}
+
+html[dir="rtl"] .vditor-reset blockquote.callout--danger {
+  border-right-color: var(--md-danger);
+}
 /* ---- Find & Replace ---- */
 
 #md-find-replace {

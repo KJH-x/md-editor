@@ -65,6 +65,8 @@ JS_REQUIRED_PATTERNS = {
     "slash menu": r"MDSlashMenu",
     "floating format bar module": r"MDFormatBar",
     "find & replace": r"MDFindReplace",
+    "custom vditor i18n object": r"mdVditorI18n",
+    "RTL detection": r"isRTL",
 }
 
 CSS_REQUIRED_PATTERNS = {

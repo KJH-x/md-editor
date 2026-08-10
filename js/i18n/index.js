@@ -62,12 +62,14 @@
       // localStorage unavailable; keep in-memory lang
     }
     document.documentElement.lang = lang;
+    document.documentElement.dir = isRTL() ? 'rtl' : 'ltr';
     applyI18n();
   }
 
   mergeDicts();
   var lang = defaultLang();
   document.documentElement.lang = lang;
+  document.documentElement.dir = isRTL() ? 'rtl' : 'ltr';
   applyI18n();
 
   var mdI18n = {
