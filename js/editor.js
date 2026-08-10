@@ -5,6 +5,7 @@
   var DEBUG = params.has('debug');
   var tabId = params.get('tabId');
   var tabHost = tabId ? new TabHost(tabId) : null;
+  if (tabHost) document.body.classList.add('md-tab-mode');
   var SAVE_DELAY = 350;
   var MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   var MAX_DATA_URL_LENGTH = 3 * 1024 * 1024;
@@ -205,6 +206,71 @@
   function updateEmptyState() {
     var empty = document.getElementById('empty-state');
     if (empty) empty.hidden = vditor.getValue().trim() !== '';
+  }
+
+  var EMPTY_TEMPLATES = [
+    {
+      key: 'readme',
+      build: function () {
+        return [
+          '# ' + mdI18n.t('empty.template.readme'),
+          '',
+          mdI18n.t('empty.template.readmeIntro'),
+          '',
+          '## ' + mdI18n.t('empty.template.agenda'),
+          '',
+          '- ' + mdI18n.t('empty.template.item'),
+          '- ' + mdI18n.t('empty.template.item'),
+          '',
+          '## ' + mdI18n.t('empty.template.actions'),
+          '',
+          '- [ ] ' + mdI18n.t('empty.template.item')
+        ].join('\n');
+      }
+    },
+    {
+      key: 'meeting',
+      build: function () {
+        return [
+          '# ' + mdI18n.t('empty.template.meeting'),
+          '',
+          '## ' + mdI18n.t('empty.template.agenda'),
+          '',
+          '- ' + mdI18n.t('empty.template.item'),
+          '',
+          '## ' + mdI18n.t('empty.template.actions'),
+          '',
+          '- [ ] ' + mdI18n.t('empty.template.item')
+        ].join('\n');
+      }
+    },
+    {
+      key: 'todo',
+      build: function () {
+        return [
+          '# ' + mdI18n.t('empty.template.todo'),
+          '',
+          '- [ ] ' + mdI18n.t('empty.template.item'),
+          '- [ ] ' + mdI18n.t('empty.template.item'),
+          '- [ ] ' + mdI18n.t('empty.template.item')
+        ].join('\n');
+      }
+    }
+  ];
+
+  function initEmptyState() {
+    var links = document.querySelectorAll('.empty-state__templates a');
+    Array.prototype.forEach.call(links, function (link, index) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+        var tpl = EMPTY_TEMPLATES[index];
+        if (!tpl || !vditor) return;
+        var markdown = tpl.build();
+        vditor.setValue(markdown, true);
+        scheduleDraftSave(markdown);
+        updateEmptyState();
+      });
+    });
   }
 
   var THEME_ICONS = {
@@ -1307,6 +1373,7 @@
           vditor.setValue(pendingRestoreValue, true);
           pendingRestoreValue = null;
         }
+        initEmptyState();
         updateEmptyState();
         renderStatusBar();
         mdI18n.applyI18n();
@@ -1519,7 +1586,8 @@
       tabId: this.tabId,
       content: content,
       title: deriveTitle(content),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      stats: computeStats(content)
     });
   };
 

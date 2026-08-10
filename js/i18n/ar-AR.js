@@ -172,6 +172,11 @@
     'overlay.s.palette': "فتح لوحة الأوامر (Ctrl+K)",
     'sw.updateReady': "نسخة جديدة جاهزة - حدّث الصفحة للتحديث",
     'shell.closeConfirmTitle': 'إغلاق التبويب',
-    'shell.closeConfirm': 'يحتوي هذا التبويب على تغييرات غير محفوظة قد تُفقد. هل تريد الإغلاق؟'
+    'shell.closeConfirm': 'يحتوي هذا التبويب على تغييرات غير محفوظة قد تُفقد. هل تريد الإغلاق؟',
+    'empty.template.readme': 'README',
+    'empty.template.readmeIntro': 'قالب README للمشروع. أضف اسم المشروع والملخص وملاحظات الاستخدام.',
+    'empty.template.agenda': 'جدول الأعمال',
+    'empty.template.actions': 'إجراءات',
+    'empty.template.item': 'عنصر'
   };
 })();

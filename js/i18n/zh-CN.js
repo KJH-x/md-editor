@@ -172,6 +172,11 @@
     'overlay.s.palette': '打开命令面板 (Ctrl+K)',
     'sw.updateReady': '新版本已就绪，刷新以更新',
     'shell.closeConfirmTitle': '关闭标签页',
-    'shell.closeConfirm': '此标签页有未保存的修改，关闭后可能丢失。确定关闭？'
+    'shell.closeConfirm': '此标签页有未保存的修改，关闭后可能丢失。确定关闭？',
+    'empty.template.readme': 'README',
+    'empty.template.readmeIntro': '项目说明文档模板，请填写项目名称、简介与使用方式。',
+    'empty.template.agenda': '议程',
+    'empty.template.actions': '行动项',
+    'empty.template.item': '待办事项'
   };
 })();

@@ -349,6 +349,19 @@ body {
   font-size: 13px;
   color: var(--md-accent);
   text-decoration: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.empty-state__templates a:hover {
+  background: var(--md-icon-hover-bg);
+  color: var(--md-icon-hover);
+}
+
+body.md-tab-mode #statusbar,
+body.md-tab-mode .editor-brand,
+body.md-tab-mode .save-status {
+  display: none;
 }
 
 .empty-state__shortcuts {

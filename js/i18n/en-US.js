@@ -172,6 +172,11 @@
     'overlay.s.palette': 'Open command palette (Ctrl+K)',
     'sw.updateReady': 'New version ready - refresh to update',
     'shell.closeConfirmTitle': 'Close tab',
-    'shell.closeConfirm': 'This tab has unsaved changes that may be lost. Close anyway?'
+    'shell.closeConfirm': 'This tab has unsaved changes that may be lost. Close anyway?',
+    'empty.template.readme': 'README',
+    'empty.template.readmeIntro': 'Project README template. Add the project name, summary, and usage notes.',
+    'empty.template.agenda': 'Agenda',
+    'empty.template.actions': 'Action items',
+    'empty.template.item': 'Item'
   };
 })();

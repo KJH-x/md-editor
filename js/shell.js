@@ -217,6 +217,7 @@ function handleChange(entry, data) {
   entry.doc.title = data.title || entry.doc.title || mdI18n.t('untitled');
   entry.doc.markdown = typeof data.content === 'string' ? data.content : entry.doc.markdown;
   entry.doc.updatedAt = typeof data.updatedAt === 'number' ? data.updatedAt : Date.now();
+  entry.stats = data.stats || entry.stats;
   entry.dirty = true;
   setPanelTitle(entry.id, true);
   window.MDStore.putDoc(entry.doc).catch(function () {});
@@ -726,6 +727,12 @@ function updateStatusbar() {
     }
   }
   setText(el('statusbar-lang'), mdI18n.lang);
+  var countsEl = el('statusbar-counts');
+  if (countsEl) {
+    var stats = entry && entry.stats;
+    setText(countsEl, stats ? mdI18n.t('statusbar.counts')
+      .replace('{chars}', stats.chars).replace('{words}', stats.words) : '');
+  }
 }
 
 function showStatus(message, isError) {

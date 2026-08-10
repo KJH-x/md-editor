@@ -172,6 +172,11 @@
     'overlay.s.palette': "Abrir la paleta de comandos (Ctrl+K)",
     'sw.updateReady': "Nueva versión lista - recarga para actualizar",
     'shell.closeConfirmTitle': 'Cerrar pestaña',
-    'shell.closeConfirm': 'Esta pestaña tiene cambios sin guardar que pueden perderse. ¿Cerrar de todos modos?'
+    'shell.closeConfirm': 'Esta pestaña tiene cambios sin guardar que pueden perderse. ¿Cerrar de todos modos?',
+    'empty.template.readme': 'README',
+    'empty.template.readmeIntro': 'Plantilla de README de proyecto. Añade el nombre, el resumen y las notas de uso.',
+    'empty.template.agenda': 'Agenda',
+    'empty.template.actions': 'Acciones',
+    'empty.template.item': 'Elemento'
   };
 })();

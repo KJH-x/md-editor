@@ -172,6 +172,11 @@
     'overlay.s.palette': "कमांड पैलेट खोलें (Ctrl+K)",
     'sw.updateReady': "नया संस्करण तैयार है - अपडेट करने के लिए रीफ़्रेश करें",
     'shell.closeConfirmTitle': 'टैब बंद करें',
-    'shell.closeConfirm': 'इस टैब में असहेज किए गए बदलाव हैं जो खो सकते हैं। फिर भी बंद करें?'
+    'shell.closeConfirm': 'इस टैब में असहेज किए गए बदलाव हैं जो खो सकते हैं। फिर भी बंद करें?',
+    'empty.template.readme': 'README',
+    'empty.template.readmeIntro': 'प्रोजेक्ट README टेम्पलेट। प्रोजेक्ट का नाम, सारांश और उपयोग नोट्स जोड़ें।',
+    'empty.template.agenda': 'एजेंडा',
+    'empty.template.actions': 'कार्य आइटम',
+    'empty.template.item': 'आइटम'
   };
 })();
