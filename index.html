@@ -26,6 +26,26 @@
   <div id="vditor"></div>
   <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
   <div class="editor-brand">md-editor · Powered by Vditor</div>
+  <div id="shortcut-overlay" hidden role="dialog" aria-modal="true" aria-label="快捷键">
+    <div class="shortcut-overlay__backdrop"></div>
+    <div class="shortcut-overlay__panel" tabindex="-1">
+      <h2 class="shortcut-overlay__title">快捷键</h2>
+      <table class="shortcut-overlay__table">
+        <tbody>
+          <tr><td><kbd>⌘S</kbd></td><td>保存草稿并下载 Markdown 文件</td></tr>
+          <tr><td><kbd>⇧⌘S</kbd></td><td>仅下载 Markdown 文件</td></tr>
+          <tr><td><kbd>⌘O</kbd></td><td>打开 Markdown 文件</td></tr>
+          <tr><td><kbd>⌘Enter</kbd></td><td>立即保存草稿</td></tr>
+          <tr><td><kbd>Alt+Ctrl+7</kbd></td><td>切换 WYSIWYG 模式</td></tr>
+          <tr><td><kbd>Alt+Ctrl+8</kbd></td><td>切换 IR 即时渲染模式</td></tr>
+          <tr><td><kbd>Alt+Ctrl+9</kbd></td><td>切换 SV 分屏预览模式</td></tr>
+          <tr><td><kbd>?</kbd></td><td>显示 / 隐藏本快捷键面板</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>关闭本快捷键面板</td></tr>
+        </tbody>
+      </table>
+      <button type="button" class="shortcut-overlay__close">关闭</button>
+    </div>
+  </div>
   <noscript>此编辑器需要启用 JavaScript。</noscript>
   <script src="vendor/vditor/dist/js/icons/ant.js" id="vditorIconScript"></script>
   <script src="vendor/vditor/dist/index.min.js"></script>
