@@ -309,6 +309,10 @@
     open: open,
     close: close,
     toggle: toggle,
-    ensure: ensure
+    ensure: ensure,
+    fuzzy: {
+      subsequenceMatch: subsequenceMatch,
+      fuzzyScore: fuzzyScore
+    }
   };
 })();

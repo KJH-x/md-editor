@@ -29,6 +29,8 @@ REQUIRED_FILES = [
     "js/tab-store.js",
     "js/actions.js",
     "js/ui/find-replace.js",
+    "js/ui/docs-panel.js",
+    "js/ui/history-drawer.js",
     "sw.js",
     "js/sw-register.js",
     "vendor/dockview/index.mjs",
@@ -84,6 +86,20 @@ JS_REQUIRED_PATTERNS = {
     "tab bridge": r"TabHost",
     "postMessage bridge": r"postMessage",
     "URLSearchParams": r"URLSearchParams",
+    "saveResult carry content": r"data\.content",
+    "requestSave delegation": r"requestSave",
+    "iframe Ctrl+O shift guard": r"key\.toLowerCase\(\)\s*===\s*'o'\s*&&\s*!event\.shiftKey",
+    "requestDocsPanel forward": r"requestDocsPanel",
+    "requestHistory forward": r"requestHistory",
+    "focus mode": r"md-focus-mode",
+    "spellcheck toggle": r"spellcheckEnabled",
+    "lightbox": r"md-lightbox",
+    "image index panel": r"md-images",
+    "outline empty-title cleaner": r"cleanOutlineEmpty",
+    "outline flicker guard": r"lastOutlineActive",
+    "pagehide persist": r"pagehide",
+    "visibilitychange": r"visibilitychange",
+    "fallback mirror": r"md-editor-fallback",
 }
 
 CSS_REQUIRED_PATTERNS = {
@@ -106,8 +122,17 @@ TAB_STORE_REQUIRED_PATTERNS = {
     "putDoc API": r"\bputDoc\b",
     "deleteDoc API": r"\bdeleteDoc\b",
     "snapshot API": r"\bsnapshot\b",
+    "listSnapshots API": r"\blistSnapshots\b",
+    "getLatestSnapshot API": r"\bgetLatestSnapshot\b",
+    "pruneSnapshots API": r"\bpruneSnapshots\b",
+    "restoreSnapshot API": r"\brestoreSnapshot\b",
+    "deleteSnapshot API": r"\bdeleteSnapshot\b",
     "exportJSON API": r"\bexportJSON\b",
     "importJSON API": r"\bimportJSON\b",
+    "importJSON mode param": r"importJSON\(data,\s*mode\)",
+    "clearDocs API": r"\bclearDocs\b",
+    "normalizeDoc tags": r"tags",
+    "normalizeDoc folder": r"folder",
     "migrateLegacy API": r"\bmigrateLegacy\b",
     "navigator locks wrap": r"navigator\.locks\.request",
     "IndexedDB open": r"indexedDB\.open",
@@ -136,6 +161,37 @@ SHELL_JS_REQUIRED_PATTERNS = {
     "close tab shortcut": r"Ctrl\+W",
     "save active": r"saveActiveTab",
     "dirty badge": r"setTitle\(\(dirty",
+    "sandbox allow-modals": r"allow-modals",
+    "sandbox allow-downloads": r"allow-downloads",
+    "saveResult carry content": r"data\.content",
+    "close drain": r"drainAndClose",
+    "requestSave delegation": r"requestSave",
+    "closing guard": r"entry\.closing",
+    "snapshotAndPrune fn": r"function\s+snapshotAndPrune\b",
+    "close finishClose": r"finishClose\(entry, panel\)",
+    "5min dirty timer": r"SNAP_TIMER_MS\s*=\s*5\s*\*\s*60\s*\*\s*1000",
+    "snapshot min interval": r"SNAP_MIN_INTERVAL",
+    "KEEP constant": r"SNAP_KEEP\s*=\s*20",
+    "1.5s close timeout": r"1500",
+    "docs.open action": r"docs\.open",
+    "docs.search action": r"docs\.search",
+    "docs.toggle action": r"docs\.toggle",
+    "docs.history action": r"docs\.history",
+    "docs.snapshot action": r"docs\.snapshot",
+    "file.importBackup action": r"file\.importBackup",
+    "importBackup fn": r"function\s+importBackup\b",
+    "readJSONFile fn": r"readJSONFile",
+    "importJSON call": r"MDStore\.importJSON",
+    "requestDocsPanel router": r"requestDocsPanel",
+    "requestHistory router": r"requestHistory",
+    "Ctrl+O shift guard": r"key\s*===\s*'o'\s*&&\s*!event\.shiftKey",
+    "beforeinstallprompt": r"beforeinstallprompt",
+    "appinstalled": r"appinstalled",
+    "storage.persist": r"storage\.persist",
+    "conflict three-way": r"saveRemoteCopy|conflict\.saveCopy",
+    "docSaved broadcast": r"docSaved",
+    "shell BroadcastChannel": r"new BroadcastChannel\('md-editor-docs'\)",
+    "reload on confirm": r"location\.reload",
 }
 
 SW_REQUIRED_PATTERNS = {
@@ -163,7 +219,40 @@ SW_REGISTER_REQUIRED_PATTERNS = {
 SHELL_SW_REQUIRED_PATTERNS = {
     "md-sw-update listener": r"md-sw-update",
     "updateReady i18n": r"sw\.updateReady",
+    "updateTitle i18n": r"sw\.updateTitle",
     "statusbar toast": r"showStatus",
+}
+
+MODAL_REQUIRED_PATTERNS = {
+    "MDModal global": r"window\.MDModal",
+    "confirm API": r"function\s+confirm\b",
+    "prompt API": r"function\s+prompt\b",
+    "choice API": r"function\s+choice\b",
+    "IIFE wrapper": r"\(function\s*\(\)",
+    "use strict": r"'use strict'",
+}
+
+DOCS_PANEL_REQUIRED_PATTERNS = {
+    "MDDocsPanel export": r"window\.MDDocsPanel",
+    "fuzzy reuse": r"MDCommandPalette\.fuzzy",
+    "deleteDoc call": r"MDStore\.deleteDoc",
+    "onOpen callback": r"onOpen",
+    "300ms debounce": r"SEARCH_DEBOUNCE\s*=\s*300",
+    "empty state actions": r"md-import-backup|onNewTab",
+}
+
+HISTORY_DRAWER_REQUIRED_PATTERNS = {
+    "MDHistoryDrawer global": r"window\.MDHistoryDrawer",
+    "open API": r"open:\s*open",
+    "listSnapshots read": r"MDStore\.listSnapshots",
+    "getCurrent callback": r"getCurrent",
+    "restore callback": r"onRestore",
+    "line diff": r"lcsDiff",
+    "render cap": r"MAX_RENDER_LINES",
+    "LCS guard": r"MAX_DIFF_CELLS",
+    "restore confirm": r"MDModal\.confirm",
+    "IIFE wrapper": r"\(function\s*\(\)",
+    "use strict": r"'use strict'",
 }
 
 def green(s):
@@ -295,6 +384,33 @@ def validate():
         print(f"  {red(chr(0x2717))} js/tab-store.js MISSING")
         errors.append("js/tab-store.js not found")
 
+    # ---- 5a. Modal module validation ----
+    print(f"\n{'[5a] Modal module (js/ui/modal.js)':<30}")
+    modal_path = ROOT / "js/ui/modal.js"
+    if modal_path.exists():
+        modal = modal_path.read_text(encoding="utf-8")
+        for label, pattern in MODAL_REQUIRED_PATTERNS.items():
+            if re.search(pattern, modal):
+                print(f"  {green(chr(0x2713))} {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {label} MISSING")
+                errors.append(f"Modal: {label}")
+        try:
+            modal_node = subprocess.run(
+                ["node", "--check", str(modal_path)],
+                capture_output=True, text=True, check=False,
+            )
+        except (FileNotFoundError, OSError):
+            modal_node = None
+        if modal_node is not None and modal_node.returncode == 0:
+            print(f"  {green(chr(0x2713))} JavaScript syntax")
+        elif modal_node is not None:
+            print(f"  {red(chr(0x2717))} JavaScript syntax")
+            errors.append(modal_node.stderr.strip() or "modal.js JavaScript syntax check failed")
+    else:
+        print(f"  {red(chr(0x2717))} js/ui/modal.js MISSING")
+        errors.append("js/ui/modal.js not found")
+
     # ---- 5b. Shell module validation ----
     print(f"\n{'[5b] Shell module (js/shell.js)':<30}")
     shell_path = ROOT / "js/shell.js"
@@ -348,6 +464,11 @@ def validate():
             errors.append("SW: sw.js must not use import")
         else:
             print(f"  {green(chr(0x2713))} no ESM import")
+        if re.search(r"const\s+VER\s*=\s*2\b", sw):
+            print(f"  {green(chr(0x2713))} VER == 2")
+        else:
+            print(f"  {red(chr(0x2717))} VER == 2")
+            errors.append("SW: VER must be 2")
         precache_section = re.search(r"const\s+PRECACHE\s*=\s*\[(.*?)\]", sw, re.S)
         if precache_section:
             paths = re.findall(r"['\"]([^'\"]+)['\"]", precache_section.group(1))
@@ -415,6 +536,36 @@ def validate():
     else:
         print(f"  {red(chr(0x2717))} js/sw-register.js MISSING")
         errors.append("js/sw-register.js not found")
+
+    # ---- 5e. UI modules (docs-panel / history-drawer) ----
+    print(f"\n{'[5e] UI modules':<30}")
+    ui_checks = [
+        ("docs-panel.js", "js/ui/docs-panel.js", DOCS_PANEL_REQUIRED_PATTERNS),
+        ("history-drawer.js", "js/ui/history-drawer.js", HISTORY_DRAWER_REQUIRED_PATTERNS),
+    ]
+    for name, rel_path, patterns in ui_checks:
+        p = ROOT / rel_path
+        if not p.exists():
+            print(f"  {red(chr(0x2717))} {rel_path} MISSING")
+            errors.append(f"{rel_path} not found")
+            continue
+        code = p.read_text(encoding="utf-8")
+        for label, pattern in patterns.items():
+            if re.search(pattern, code):
+                print(f"  {green(chr(0x2713))} {name}: {label}")
+            else:
+                print(f"  {red(chr(0x2717))} {name}: {label} MISSING")
+                errors.append(f"{name}: {label}")
+        try:
+            node = subprocess.run(["node", "--check", str(p)],
+                                  capture_output=True, text=True, check=False)
+        except (FileNotFoundError, OSError):
+            node = None
+        if node is not None and node.returncode == 0:
+            print(f"  {green(chr(0x2713))} {name}: JavaScript syntax")
+        elif node is not None:
+            print(f"  {red(chr(0x2717))} {name}: JavaScript syntax")
+            errors.append(node.stderr.strip() or f"{name} JavaScript syntax check failed")
 
     # ---- 6. CSS code validation ----
     print(f"\n{'[6] CSS structure':<30}")
@@ -520,6 +671,52 @@ def validate():
     else:
         errors.append("js/i18n/index.js not found")
 
+    # ---- 9. i18n key alignment ----
+    print(f"\n{'[9] i18n key alignment':<30}")
+    required_i18n_keys = [
+        "shell.importBackup", "import.title", "import.chooseMode", "import.merge",
+        "import.replace", "import.replaceTitle", "import.replaceConfirm", "import.done",
+        "import.invalid", "import.empty", "import.failed",
+        "docs.toggleShort", "docs.title", "docs.open", "docs.search", "docs.toggle",
+        "docs.searchPlaceholder", "docs.timeNow", "docs.timeMinAgo", "docs.timeHrAgo",
+        "docs.timeDayAgo", "docs.counts", "docs.empty", "docs.noResults", "docs.newDoc",
+        "docs.importBackup", "docs.openAction", "docs.rename", "docs.delete",
+        "docs.renameTitle", "docs.renameLabel", "docs.renameInvalid", "docs.deleteTitle",
+        "docs.deleteConfirm",
+        "history.open", "history.snapshot", "history.title", "history.close",
+        "history.loading", "history.loadError", "history.empty", "history.count",
+        "history.versionLabel", "history.timeNow", "history.timeMinAgo",
+        "history.timeHrAgo", "history.timeDayAgo", "history.wordsDiff",
+        "history.current", "history.identical", "history.more", "history.restore",
+        "history.restoreConfirmTitle", "history.restoreConfirm", "history.restored",
+        "history.restoreFailed", "history.snapshotted", "history.snapshotSkipped",
+        "history.snapshotFailed", "history.delete", "history.deleted",
+        "conflict.title", "conflict.message", "conflict.keepLocal", "conflict.useRemote",
+        "conflict.saveCopy", "conflict.remoteApplied", "conflict.copySaved",
+        "conflict.copySuffix",
+        "save.errorTitle", "save.errorMessage", "save.retry", "save.exportBackup",
+        "pwa.install", "pwa.installReady", "pwa.installed", "pwa.installUnavailable",
+        "pwa.persistDenied", "sw.updateTitle", "sw.updateMessage",
+        "toolbar.images", "image.barLabel", "image.width", "image.widthTitle",
+        "image.widthPrompt", "image.alignLeft", "image.alignCenter", "image.alignRight",
+        "image.panelTitle", "image.panelEmpty", "image.locate", "image.dim",
+        "image.unknown", "image.lightboxLabel", "image.lightboxPrev",
+        "image.lightboxNext", "image.lightboxClose",
+        "toolbar.focus", "toolbar.spellcheck", "spellcheck.on", "spellcheck.off",
+    ]
+    for code in i18n_codes:
+        p = ROOT / f"js/i18n/{code}.js"
+        if not p.exists():
+            continue
+        text = p.read_text(encoding="utf-8")
+        keys = set(re.findall(r"'([^']+)'\s*:", text))
+        missing = [k for k in required_i18n_keys if k not in keys]
+        if missing:
+            print(f"  {red(chr(0x2717))} {code}: missing {', '.join(missing)}")
+            errors.append(f"i18n: {code} missing keys: {', '.join(missing)}")
+        else:
+            print(f"  {green(chr(0x2713))} {code}: all {len(required_i18n_keys)} keys present")
+
     # ---- 8. PWA manifest & icons ----
     print(f"\n{'[8] PWA manifest & icons':<30}")
     manifest_path = ROOT / "manifest.webmanifest"
@@ -562,6 +759,42 @@ def validate():
                             print(f"  {red(chr(0x2717))} {ico['src']} {w}x{h} != {expected}")
             else:
                 print(f"  {yellow('!')} PIL unavailable; icon dimensions not verified")
+            if manifest.get("id"):
+                print(f"  {green(chr(0x2713))} id present")
+            else:
+                errors.append("PWA: manifest id missing")
+                print(f"  {red(chr(0x2717))} id missing")
+            screenshots = manifest.get("screenshots", [])
+            if screenshots and isinstance(screenshots, list):
+                for shot in screenshots:
+                    src = shot.get("src", "")
+                    sp = ROOT / src.lstrip("/")
+                    ok = (sp.exists() and shot.get("sizes") and shot.get("type"))
+                    if ok:
+                        print(f"  {green(chr(0x2713))} screenshot {src}")
+                    else:
+                        errors.append(f"PWA: screenshot invalid {src}")
+                        print(f"  {red(chr(0x2717))} screenshot {src} invalid or missing")
+            else:
+                errors.append("PWA: screenshots missing")
+                print(f"  {red(chr(0x2717))} screenshots missing")
+            shortcuts = manifest.get("shortcuts", [])
+            if shortcuts and isinstance(shortcuts, list):
+                for sc in shortcuts:
+                    if sc.get("name") and sc.get("url"):
+                        print(f"  {green(chr(0x2713))} shortcut {sc.get('name')}")
+                    else:
+                        errors.append(f"PWA: shortcut invalid {sc}")
+                        print(f"  {red(chr(0x2717))} shortcut invalid")
+            else:
+                errors.append("PWA: shortcuts missing")
+                print(f"  {red(chr(0x2717))} shortcuts missing")
+            categories = manifest.get("categories", [])
+            if isinstance(categories, list) and all(isinstance(c, str) for c in categories):
+                print(f"  {green(chr(0x2713))} categories present")
+            else:
+                errors.append("PWA: categories missing or invalid")
+                print(f"  {red(chr(0x2717))} categories missing")
     else:
         errors.append("manifest.webmanifest not found")
         print(f"  {red(chr(0x2717))} manifest.webmanifest MISSING")

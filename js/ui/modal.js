@@ -267,8 +267,44 @@
     });
   }
 
+  function choice(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var state = openDialog({
+        title: opts.title,
+        message: opts.message,
+        onCancel: function () { resolve(null); }
+      });
+      var dialog = state.dialog;
+      var actions = document.createElement('div');
+      actions.className = 'md-modal__actions';
+      var options = opts.options || [];
+      var buttons = [];
+      for (var i = 0; i < options.length; i++) {
+        var option = options[i];
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'md-modal__btn' +
+          (option.primary ? ' md-modal__btn--primary' : '') +
+          (option.danger ? ' md-modal__btn--danger' : '');
+        button.textContent = option.label || String(option.value == null ? '' : option.value);
+        button.addEventListener('click', function (value) {
+          return function () {
+            state.close();
+            resolve(value);
+          };
+        }(option.value === undefined ? null : option.value));
+        actions.appendChild(button);
+        buttons.push(button);
+      }
+      dialog.appendChild(actions);
+      if (buttons.length) buttons[0].focus();
+    });
+  }
+
   window.MDModal = {
     confirm: confirm,
-    prompt: prompt
+    prompt: prompt,
+    choice: choice
   };
 })();

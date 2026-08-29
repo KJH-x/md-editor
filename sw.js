@@ -1,6 +1,6 @@
 'use strict';
 
-const VER = 1;
+const VER = 2;
 const SHELL = 'md-shell-v' + VER;
 const RUNTIME = 'md-runtime-v' + VER;
 
@@ -29,6 +29,8 @@ const PRECACHE = [
   '/js/i18n/vditor-ar.js',
   '/js/ui/modal.js',
   '/js/ui/command-palette.js',
+  '/js/ui/docs-panel.js',
+  '/js/ui/history-drawer.js',
   '/js/ui/slash-menu.js',
   '/js/ui/format-bar.js',
   '/js/ui/find-replace.js',

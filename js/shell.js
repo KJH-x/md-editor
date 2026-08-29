@@ -102,10 +102,93 @@ function broadcastToAll(message) {
   });
 }
 
+var conflictSource = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+var conflictChannel = null;
+if ('BroadcastChannel' in window) {
+  conflictChannel = new BroadcastChannel('md-editor-docs');
+  conflictChannel.onmessage = function (event) {
+    var data = event.data;
+    if (!data || data.type !== 'docSaved' || !data.docId) return;
+    if (data.source === conflictSource) return;
+    handleRemoteSave(data);
+  };
+}
+
+function broadcastDocSaved(docId, updatedAt) {
+  if (!conflictChannel) return;
+  var entry = tabs.get(docId);
+  try {
+    conflictChannel.postMessage({
+      type: 'docSaved',
+      docId: docId,
+      updatedAt: updatedAt || Date.now(),
+      source: conflictSource,
+      markdown: entry && entry.doc ? entry.doc.markdown : ''
+    });
+  } catch (err) {}
+}
+
+function handleRemoteSave(data) {
+  var entry = tabs.get(data.docId);
+  if (!entry || !entry.dirty || entry.closing) return;
+  if (typeof data.markdown !== 'string') return;
+  if (entry.doc && entry.doc.updatedAt && data.updatedAt &&
+      data.updatedAt <= entry.doc.updatedAt) return;
+  if (!window.MDModal) return;
+  window.MDModal.choice({
+    title: mdI18n.t('conflict.title'),
+    message: mdI18n.t('conflict.message'),
+    options: [
+      { label: mdI18n.t('conflict.keepLocal'), value: 'keep', primary: true },
+      { label: mdI18n.t('conflict.useRemote'), value: 'remote' },
+      { label: mdI18n.t('conflict.saveCopy'), value: 'copy' },
+      { label: mdI18n.t('dialog.cancel'), value: null }
+    ]
+  }).then(function (choice) {
+    if (choice === 'remote') applyRemoteContent(entry, data);
+    else if (choice === 'copy') saveRemoteCopy(entry, data);
+  });
+}
+
+function applyRemoteContent(entry, data) {
+  entry.doc = entry.doc || {};
+  entry.doc.id = entry.id;
+  entry.doc.markdown = data.markdown;
+  entry.doc.title = deriveTitle(data.markdown);
+  entry.doc.updatedAt = data.updatedAt || Date.now();
+  entry.dirty = false;
+  window.MDStore.putDoc(entry.doc).then(function () {
+    setPanelTitle(entry.id, false);
+  }).catch(function () {});
+  ensureInit(entry);
+  updateStatusbar();
+  showStatus(mdI18n.t('conflict.remoteApplied'));
+}
+
+function saveRemoteCopy(entry, data) {
+  var copy = {
+    id: newDocId(),
+    title: deriveTitle(data.markdown) + ' (' + mdI18n.t('conflict.copySuffix') + ')',
+    markdown: data.markdown,
+    updatedAt: Date.now()
+  };
+  if (entry.doc) {
+    if (Array.isArray(entry.doc.tags)) copy.tags = entry.doc.tags.slice();
+    if (entry.doc.folder) copy.folder = entry.doc.folder;
+  }
+  window.MDStore.putDoc(copy).then(function () {
+    openDoc(copy);
+    showStatus(mdI18n.t('conflict.copySaved'));
+  }).catch(function () {
+    showStatus(mdI18n.t('save.error'), true);
+  });
+}
+
 function ensureInit(entry) {
   if (!entry || !entry.iframe) return;
   postToEntry(entry, {
     type: 'init',
+    docId: entry.doc && entry.doc.id ? entry.doc.id : entry.id,
     content: entry.doc ? entry.doc.markdown : '',
     title: entry.doc ? (entry.doc.title || '') : '',
     lang: mdI18n.lang,
@@ -133,7 +216,7 @@ function createVditorTabRenderer(options) {
       iframe.src = src.href;
       iframe.title = (doc && doc.title) || id;
       iframe.setAttribute('aria-label', iframe.title);
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-modals allow-downloads');
       element.appendChild(iframe);
       tabs.set(id, {
         id: id,
@@ -237,13 +320,56 @@ window.addEventListener('message', function (event) {
     entry.ready = true;
     ensureInit(entry);
   } else if (data.type === 'change') {
+    if (entry.closing) return;
     handleChange(entry, data);
   } else if (data.type === 'saveResult') {
+    if (data.ok && typeof data.content === 'string') {
+      entry.doc = entry.doc || {};
+      entry.doc.id = entry.id;
+      entry.doc.markdown = data.content;
+      entry.doc.title = data.title || entry.doc.title;
+      entry.doc.updatedAt = data.updatedAt || Date.now();
+      entry.stats = data.stats || entry.stats;
+      entry.dirty = false;
+      setPanelTitle(entry.id, false);
+      broadcastDocSaved(entry.id, entry.doc.updatedAt);
+    }
     entry.saveState = data.ok ? 'saved' : 'error';
     updateStatusbar();
     showStatus(data.ok ? mdI18n.t('save.saved') : mdI18n.t('save.error'), !data.ok);
+    if (!data.ok && window.MDModal) {
+      window.MDModal.choice({
+        title: mdI18n.t('save.errorTitle'),
+        message: mdI18n.t('save.errorMessage'),
+        options: [
+          { label: mdI18n.t('save.retry'), value: 'retry', primary: true },
+          { label: mdI18n.t('save.exportBackup'), value: 'export' },
+          { label: mdI18n.t('dialog.cancel'), value: null }
+        ]
+      }).then(function (choice) {
+        if (choice === 'retry') postToEntry(entry, { type: 'requestSave', tabId: entry.id });
+        else if (choice === 'export') exportAllDocs();
+      });
+    }
+    if (entry.onSaveResult) {
+      var cb = entry.onSaveResult;
+      entry.onSaveResult = null;
+      cb(data);
+    }
+    if (entry.onDrainResult) {
+      var cb2 = entry.onDrainResult;
+      entry.onDrainResult = null;
+      cb2(data);
+    }
   } else if (data.type === 'requestOpen') {
     openFileIntoActive();
+  } else if (data.type === 'requestDocsPanel') {
+    if (window.MDDocsPanel) window.MDDocsPanel.toggle();
+  } else if (data.type === 'requestHistory') {
+    var historyPanel = dockview.api.getPanel(tabId);
+    if (historyPanel && dockview.api.activePanel !== historyPanel) historyPanel.api.setActive();
+    var historyEntry = tabs.get(tabId);
+    if (historyEntry) openHistoryDrawerFor(historyEntry);
   } else if (data.type === 'focus') {
     var panel = dockview.api.getPanel(tabId);
     if (panel && dockview.api.activePanel !== panel) panel.api.setActive();
@@ -308,18 +434,187 @@ function panelFromTab(tabElement) {
 function doClosePanel(panel) {
   if (!panel) return;
   var entry = tabs.get(panel.id);
-  if (entry && entry.doc && entry.doc.markdown) {
-    entry.doc.updatedAt = Date.now();
-    window.MDStore.putDoc(entry.doc).catch(function () {});
+  if (entry) {
+    entry.closing = true;
+    drainAndClose(entry, panel);
+  } else {
+    panel.api.close();
   }
-  panel.api.close();
+}
+
+var SNAP_KEEP = 20;
+var SNAP_TIMER_MS = 5 * 60 * 1000;
+var SNAP_MIN_INTERVAL = 60 * 1000;
+var lastSnapshotAt = {};
+
+function drainSave(entry) {
+  if (!entry || !entry.ready || !entry.iframe || !entry.iframe.contentWindow) {
+    return Promise.resolve(entry && entry.doc ? entry.doc.markdown : '');
+  }
+  return new Promise(function (resolve) {
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      resolve(entry.doc ? entry.doc.markdown : '');
+    }, 1500);
+    entry.onDrainResult = function (result) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      entry.onDrainResult = null;
+      var markdown = result && result.ok && typeof result.content === 'string'
+        ? result.content : (entry.doc ? entry.doc.markdown : '');
+      resolve(markdown);
+    };
+    postToEntry(entry, { type: 'requestSave', tabId: entry.id });
+  });
+}
+
+function snapshotAndPrune(docId) {
+  var latest = null;
+  return window.MDStore.getLatestSnapshot(docId).then(function (record) {
+    latest = record;
+    return window.MDStore.getDoc(docId);
+  }).then(function (doc) {
+    if (!doc || typeof doc.markdown !== 'string') return null;
+    if (latest && latest.markdown === doc.markdown) return null;
+    return window.MDStore.snapshot(docId).then(function (record) {
+      return window.MDStore.pruneSnapshots(docId, SNAP_KEEP).then(function (prune) {
+        return { snapshot: record, pruned: prune && prune.pruned };
+      });
+    });
+  }).catch(function (err) {
+    if (window.console && console.error) console.error('[md-snapshot] failed for ' + docId, err);
+    return null;
+  });
+}
+
+function finishClose(entry, panel) {
+  snapshotAndPrune(entry.id).then(function () {
+    panel.api.close();
+  });
+}
+
+function snapshotActiveDoc() {
+  var panel = dockview.api.activePanel;
+  if (!panel) return;
+  var entry = tabs.get(panel.id);
+  if (!entry) return;
+  var before = entry.dirty ? drainSave(entry) : Promise.resolve('');
+  before.then(function () {
+    return snapshotAndPrune(entry.id);
+  }).then(function (result) {
+    if (!result) showStatus(mdI18n.t('history.snapshotFailed'), true);
+    else if (!result.snapshot) showStatus(mdI18n.t('history.snapshotSkipped'), true);
+    else showStatus(mdI18n.t('history.snapshotted'));
+  });
+}
+
+function scheduledSnapshotTick() {
+  var now = Date.now();
+  tabs.forEach(function (entry) {
+    if (!entry || !entry.dirty) return;
+    var last = lastSnapshotAt[entry.id] || 0;
+    if (now - last < SNAP_MIN_INTERVAL) return;
+    snapshotAndPrune(entry.id).then(function () {
+      lastSnapshotAt[entry.id] = Date.now();
+    });
+  });
+}
+
+function drainAndClose(entry, panel) {
+  var done = false;
+  var timer = setTimeout(function () {
+    if (done) return;
+    done = true;
+    window.MDStore.getDoc(entry.id).then(function (fresh) {
+      if (fresh) entry.doc = fresh;
+      else if (entry.doc && entry.doc.markdown) return window.MDStore.putDoc(entry.doc);
+    }).then(function () {
+      finishClose(entry, panel);
+    }, function () {
+      finishClose(entry, panel);
+    });
+  }, 1500);
+
+  entry.onSaveResult = function (result) {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    finishClose(entry, panel);
+  };
+
+  if (!entry.ready || !entry.iframe || !entry.iframe.contentWindow) {
+    if (entry.doc && entry.doc.markdown) {
+      window.MDStore.putDoc(entry.doc).catch(function () {});
+    }
+    done = true;
+    clearTimeout(timer);
+    finishClose(entry, panel);
+    return;
+  }
+  postToEntry(entry, { type: 'requestSave', tabId: entry.id });
+}
+
+function openHistoryForActive() {
+  var panel = dockview.api.activePanel;
+  if (!panel) return;
+  var entry = tabs.get(panel.id);
+  if (!entry) return;
+  openHistoryDrawerFor(entry);
+}
+
+function openHistoryDrawerFor(entry) {
+  if (!window.MDHistoryDrawer) return;
+  window.MDHistoryDrawer.open({
+    docId: entry.id,
+    getCurrent: function () {
+      return Promise.resolve(entry.doc ? entry.doc.markdown : '');
+    },
+    onRestore: function (snapshot) { return restoreFromSnapshot(entry, snapshot); }
+  });
+}
+
+function restoreFromSnapshot(entry, snapshot) {
+  if (!entry) {
+    return window.MDStore.putDoc({
+      id: snapshot.docId,
+      title: deriveTitle(snapshot.markdown),
+      markdown: snapshot.markdown,
+      updatedAt: Date.now()
+    }).then(function () { return true; }).catch(function () { return false; });
+  }
+  return drainSave(entry).then(function () {
+    return snapshotAndPrune(entry.id);
+  }).then(function () {
+    var doc = {
+      id: entry.id,
+      title: deriveTitle(snapshot.markdown),
+      markdown: snapshot.markdown,
+      updatedAt: Date.now()
+    };
+    entry.doc = doc;
+    entry.dirty = false;
+    entry.saveState = 'saved';
+    return window.MDStore.putDoc(doc);
+  }).then(function () {
+    ensureInit(entry);
+    setPanelTitle(entry.id, false);
+    updateStatusbar();
+    showStatus(mdI18n.t('history.restored'));
+    return true;
+  }).catch(function () {
+    showStatus(mdI18n.t('history.restoreFailed'), true);
+    return false;
+  });
 }
 
 function closePanel(panel) {
-  if (!panel) return;
+  if (!panel) return Promise.resolve();
   var entry = tabs.get(panel.id);
   if (entry && entry.dirty && window.MDModal) {
-    window.MDModal.confirm({
+    return window.MDModal.confirm({
       title: mdI18n.t('shell.closeConfirmTitle'),
       message: mdI18n.t('shell.closeConfirm'),
       confirmLabel: mdI18n.t('dialog.confirm'),
@@ -328,9 +623,9 @@ function closePanel(panel) {
     }).then(function (ok) {
       if (ok) doClosePanel(panel);
     });
-  } else {
-    doClosePanel(panel);
   }
+  doClosePanel(panel);
+  return Promise.resolve();
 }
 
 function closeActiveTab() {
@@ -408,21 +703,25 @@ function saveActiveTab() {
   if (!panel) return;
   var entry = tabs.get(panel.id);
   if (!entry) return;
+  if (!entry.ready) {
+    if (!entry.doc) entry.doc = { id: entry.id, title: '', markdown: '', updatedAt: Date.now() };
+    entry.doc.updatedAt = Date.now();
+    window.MDStore.putDoc(entry.doc).then(function () {
+      entry.dirty = false;
+      entry.saveState = 'saved';
+      setPanelTitle(entry.id, false);
+      updateStatusbar();
+      showStatus(mdI18n.t('save.saved'));
+    }).catch(function () {
+      entry.saveState = 'error';
+      updateStatusbar();
+      showStatus(mdI18n.t('save.error'), true);
+    });
+    return;
+  }
   entry.saveState = 'saving';
   updateStatusbar();
-  if (!entry.doc) entry.doc = { id: entry.id, title: '', markdown: '', updatedAt: Date.now() };
-  entry.doc.updatedAt = Date.now();
-  window.MDStore.putDoc(entry.doc).then(function () {
-    entry.dirty = false;
-    entry.saveState = 'saved';
-    setPanelTitle(entry.id, false);
-    updateStatusbar();
-    showStatus(mdI18n.t('save.saved'));
-  }).catch(function () {
-    entry.saveState = 'error';
-    updateStatusbar();
-    showStatus(mdI18n.t('save.error'), true);
-  });
+  postToEntry(entry, { type: 'requestSave', tabId: entry.id });
 }
 
 function cycleTheme() {
@@ -490,6 +789,97 @@ function exportAllDocs() {
     showStatus(mdI18n.t('shell.exportDone'));
   }).catch(function () {
     showStatus(mdI18n.t('save.error'), true);
+  });
+}
+
+function downloadJSON(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function readJSONFile() {
+  return new Promise(function (resolve, reject) {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) { resolve(null); return; }
+      if (file.size > 200 * 1024 * 1024) {
+        reject(new Error('file too large'));
+        return;
+      }
+      file.text().then(function (text) {
+        var parsed;
+        try { parsed = JSON.parse(text); }
+        catch (err) { reject(new Error('invalid JSON')); return; }
+        resolve({ name: file.name, json: parsed });
+      }, reject);
+    });
+    input.click();
+  });
+}
+
+function importBackup() {
+  readJSONFile().then(function (result) {
+    if (!result) return;
+    var parsed = result.json;
+    if (!parsed || !Array.isArray(parsed.docs)) {
+      showStatus(mdI18n.t('import.invalid'), true);
+      return;
+    }
+    if (!parsed.docs.length) {
+      showStatus(mdI18n.t('import.empty'), true);
+      return;
+    }
+    window.MDModal.choice({
+      title: mdI18n.t('import.title'),
+      message: mdI18n.t('import.chooseMode').replace('{n}', String(parsed.docs.length)),
+      options: [
+        { label: mdI18n.t('import.merge'), value: 'merge', primary: true },
+        { label: mdI18n.t('import.replace'), value: 'replace', danger: true },
+        { label: mdI18n.t('dialog.cancel'), value: null }
+      ]
+    }).then(function (mode) {
+      if (mode === null) return null;
+      if (mode === 'replace') {
+        return window.MDStore.exportJSON().then(function (backupJson) {
+          downloadJSON(new Blob([backupJson], { type: 'application/json' }),
+            'md-editor-backup-before-replace.json');
+          return window.MDModal.confirm({
+            title: mdI18n.t('import.replaceTitle'),
+            message: mdI18n.t('import.replaceConfirm').replace('{n}', String(parsed.docs.length)),
+            confirmLabel: mdI18n.t('dialog.confirm'),
+            cancelLabel: mdI18n.t('dialog.cancel'),
+            danger: true
+          }).then(function (ok) {
+            return ok ? window.MDStore.importJSON(parsed, 'replace') : null;
+          });
+        });
+      }
+      return window.MDStore.importJSON(parsed, 'merge');
+    }).then(function (result) {
+      if (!result) return;
+      showStatus(mdI18n.t('import.done')
+        .replace('{added}', String(result.added))
+        .replace('{skipped}', String(result.skipped)));
+      if (window.MDDocsPanel && window.MDDocsPanel.refresh) window.MDDocsPanel.refresh();
+      return window.MDStore.listDocs().then(function (docs) {
+        if (docs && docs.length) openDoc(docs[0]);
+      });
+    }).catch(function (err) {
+      showStatus(err && err.message === 'invalid JSON' ? mdI18n.t('import.invalid')
+        : mdI18n.t('import.failed'), true);
+    });
+  }).catch(function (err) {
+    showStatus(err && err.message === 'invalid JSON' ? mdI18n.t('import.invalid')
+      : mdI18n.t('import.failed'), true);
   });
 }
 
@@ -774,12 +1164,34 @@ function registerActions() {
     ['save', mdI18n.t('toolbar.save')], function () { saveActiveTab(); });
   registerAction('shell.export', mdI18n.t('shell.export'), 'file', '',
     ['export', 'json', mdI18n.t('shell.export')], function () { exportAllDocs(); });
+  registerAction('file.importBackup', mdI18n.t('shell.importBackup'), 'file', '',
+    ['import', 'restore', 'backup', 'json', mdI18n.t('shell.importBackup')],
+    function () { importBackup(); });
+  registerAction('docs.open', mdI18n.t('docs.open'), 'file', '',
+    ['open doc', 'document', 'docs', mdI18n.t('docs.open')],
+    function () { openDocsPicker(); });
+  registerAction('docs.search', mdI18n.t('docs.search'), 'file', '',
+    ['search doc', 'docs', mdI18n.t('docs.search')],
+    function () {
+      if (window.MDDocsPanel) { window.MDDocsPanel.open(); window.MDDocsPanel.focusSearch(); }
+    });
+  registerAction('docs.toggle', mdI18n.t('docs.toggle'), 'file', 'Ctrl+Shift+O',
+    ['docs', 'library', 'panel', mdI18n.t('docs.toggle')],
+    function () { if (window.MDDocsPanel) window.MDDocsPanel.toggle(); });
+  registerAction('docs.history', mdI18n.t('history.open'), 'file', '',
+    ['history', 'snapshot', 'version', 'restore', mdI18n.t('history.open')],
+    function () { openHistoryForActive(); });
+  registerAction('docs.snapshot', mdI18n.t('history.snapshot'), 'file', '',
+    ['snapshot', 'version', 'checkpoint', mdI18n.t('history.snapshot')],
+    function () { snapshotActiveDoc(); });
   registerAction('shell.pagewidth', mdI18n.t('shell.pagewidth'), 'settings', '',
     ['page width', mdI18n.t('shell.pagewidth')], function () { promptPageWidth(); });
   registerAction('shell.theme', mdI18n.t('action.theme.cycle'), 'settings', '',
     ['theme', mdI18n.t('action.theme.cycle')], function () { cycleTheme(); });
   registerAction('shell.lang', mdI18n.t('action.lang.switch'), 'settings', '',
     ['lang', 'language', mdI18n.t('action.lang.switch')], function () { cycleLang(); });
+  registerAction('app.install', mdI18n.t('pwa.install'), 'app', '',
+    ['install', 'app', mdI18n.t('pwa.install')], function () { installApp(); });
 }
 
 function bindShortcuts() {
@@ -843,10 +1255,16 @@ function bindShortcuts() {
       saveActiveTab();
       return;
     }
-    if (mod && key === 'o') {
+    if (mod && key === 'o' && !event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
       openFileIntoActive();
+      return;
+    }
+    if (mod && key === 'o' && event.shiftKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (window.MDDocsPanel) window.MDDocsPanel.toggle();
       return;
     }
     if (mod && key === 'k' && !event.shiftKey && !event.altKey) {
@@ -875,10 +1293,69 @@ function bindSystemTheme() {
   else if (darkMedia.addListener) darkMedia.addListener(onChange);
 }
 
+var deferredInstallPrompt = null;
+
+function bindInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    showStatus(mdI18n.t('pwa.installReady'));
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredInstallPrompt = null;
+    showStatus(mdI18n.t('pwa.installed'));
+  });
+}
+
+function installApp() {
+  if (!deferredInstallPrompt) {
+    showStatus(mdI18n.t('pwa.installUnavailable'), true);
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function (choice) {
+    if (choice && choice.outcome === 'accepted') showStatus(mdI18n.t('pwa.installed'));
+    deferredInstallPrompt = null;
+  }).catch(function () {
+    deferredInstallPrompt = null;
+  });
+}
+
+function requestPersistentStorage() {
+  if (!navigator.storage || typeof navigator.storage.persist !== 'function') return;
+  navigator.storage.persist().then(function (persisted) {
+    if (!persisted) showStatus(mdI18n.t('pwa.persistDenied'), true);
+  }).catch(function () {});
+}
+
+function flushAllBeforeReload() {
+  tabs.forEach(function (entry) {
+    if (entry && entry.ready) postToEntry(entry, { type: 'requestSave', tabId: entry.id });
+  });
+  setTimeout(function () { location.reload(); }, 700);
+}
+
 function bindSwUpdate() {
   window.addEventListener('md-sw-update', function () {
     showStatus(mdI18n.t('sw.updateReady'));
+    if (!window.MDModal) return;
+    window.MDModal.confirm({
+      title: mdI18n.t('sw.updateTitle'),
+      message: mdI18n.t('sw.updateMessage'),
+      confirmLabel: mdI18n.t('dialog.confirm'),
+      cancelLabel: mdI18n.t('dialog.cancel'),
+      danger: false
+    }).then(function (ok) {
+      if (!ok) return;
+      flushAllBeforeReload();
+    });
   });
+}
+
+function openDocsPicker() {
+  if (!window.MDDocsPanel) return;
+  window.MDDocsPanel.open();
+  window.MDDocsPanel.focusSearch();
 }
 
 var shellObserverTimer = null;
@@ -918,6 +1395,11 @@ function boot() {
   var newTabBtn = el('new-tab');
   if (newTabBtn) newTabBtn.addEventListener('click', function () { newTab(); });
 
+  var docsToggleBtn = el('docs-toggle');
+  if (docsToggleBtn) docsToggleBtn.addEventListener('click', function () {
+    if (window.MDDocsPanel) window.MDDocsPanel.toggle();
+  });
+
   var docsPromise = window.MDStore.migrateLegacy()
     .catch(function () { return null; })
     .then(function () { return window.MDStore.listDocs(); })
@@ -934,15 +1416,50 @@ function boot() {
     }
     refreshPanelDocs();
     updateChrome();
+    if (window.MDDocsPanel && typeof window.MDDocsPanel.refresh === 'function') {
+      window.MDDocsPanel.refresh();
+    }
+  });
+
+  if (window.MDDocsPanel && typeof window.MDDocsPanel.init === 'function') {
+    window.MDDocsPanel.init({ onOpen: openDoc, onDelete: handleDocDeleted, onNewTab: newTab });
+  }
+  document.addEventListener('md-import-backup', function () {
+    importBackup();
+  });
+  document.addEventListener('md-doc-updated', function (event) {
+    var docId = event.detail && event.detail.docId;
+    if (!docId) return;
+    var entry = tabs.get(docId);
+    if (!entry) return;
+    window.MDStore.getDoc(docId).then(function (doc) {
+      if (!doc) return;
+      entry.doc = doc;
+      var panel = dockview.api.getPanel(docId);
+      if (panel) panel.api.setTitle(doc.title || mdI18n.t('untitled'));
+      if (entry.ready) ensureInit(entry);
+      updateStatusbar();
+    }).catch(function () {});
   });
 
   registerActions();
   bindShortcuts();
   bindSystemTheme();
   bindSwUpdate();
+  bindInstallPrompt();
   bindTabInteractions();
+  setInterval(scheduledSnapshotTick, SNAP_TIMER_MS);
+  requestPersistentStorage();
   applyShellTheme(theme);
   mdI18n.applyI18n();
+}
+
+function handleDocDeleted(docId, done) {
+  var entry = tabs.get(docId);
+  if (entry) entry.closing = true;
+  var panel = dockview.api.getPanel(docId);
+  if (panel) panel.api.close();
+  if (done) done();
 }
 
 boot();

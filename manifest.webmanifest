@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "md-editor — Markdown Editor",
   "short_name": "md-editor",
   "description": "Local-first Markdown editor (Vditor)",
@@ -8,6 +9,16 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    { "src": "/screenshots/desktop.png", "sizes": "1280x800", "type": "image/png", "label": "md-editor desktop view", "form_factor": "wide" },
+    { "src": "/screenshots/mobile.png", "sizes": "390x844", "type": "image/png", "label": "md-editor mobile view", "form_factor": "narrow" }
+  ],
+  "shortcuts": [
+    { "name": "New document", "url": "/?action=new", "description": "Create a new empty document" },
+    { "name": "Command palette", "url": "/?action=palette", "description": "Open the command palette" },
+    { "name": "Export JSON", "url": "/?action=export", "description": "Export all documents as JSON" }
+  ],
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
